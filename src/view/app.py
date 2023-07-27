@@ -14,4 +14,16 @@ def run_app() -> None:
     """
     Function for running app.
     """
-    pass
+    st.set_page_config(
+        page_title="LLM Tutor",
+        page_icon=":books:"
+    )
+
+    st.header("LLM Tutor: Upload and talk to learning material.")
+    st.text_input("Query:")
+
+    with st.sidebar:
+        st.subheader("Learning Material")
+        st.file_uploader("Skripts")
+        st.file_uploader("Presentations")
+        st.file_uploader("Books")
