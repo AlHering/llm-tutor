@@ -13,7 +13,7 @@ from chromadb.config import Settings
 from langchain.docstore.document import Document
 from pydantic import BaseModel
 from langchain.vectorstores import Chroma
-from src.utility.hashing_utility import hash_text_with_sha256
+from src.utility.bronze.hashing_utility import hash_text_with_sha256
 
 
 def get_or_create_vectordb(db_type: str = "chromadb", db_kwargs: Optional[Any] = {}) -> Any:
