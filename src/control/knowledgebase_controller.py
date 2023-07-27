@@ -7,10 +7,12 @@
 """
 import os
 from typing import Any, List, Tuple
+import chromadb
 from chromadb.api.types import EmbeddingFunction, Embeddings, Documents
 from chromadb.api.models import Collection
-import chromadb
+from chromadb.config import Settings
 from langchain.docstore.document import Document
+from langchain.vectorstores import Chroma
 from langchain.vectorstores.base import VectorStoreRetriever
 from src.configuration import configuration as cfg
 from src.utility.bronze.hashing_utility import hash_text_with_sha256
@@ -106,24 +108,36 @@ class KnowledgeBaseController(object):
         self.peristant_directory = peristant_directory
         self.base_embedding_function = T5EmbeddingFunction(
         ) if base_embedding_function is None else base_embedding_function
-        self.default_client = chromadb.PersistentClient(
-            path=peristant_directory)
-        self.collections = {
-            "base": self.default_client.get_or_create_collection(name="base", metadata=metadata, embedding_function=self.base_embedding_function)
+
+        self.base_chromadb = Chroma(
+            persist_directory=peristant_directory,
+            embedding_function=self.base_embedding_function,
+            collection_name="base",
+            client_settings=Settings(persist_directory=peristant_directory)
+        )
+
+        self.databases = {
+            "base": self.base_chromadb
         }
 
-    def get_or_create_collection(self, name: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Collection:
+    def get_or_create_collection(self, name: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Chroma:
         """
         Method for retrieving or creating a collection.
         :param name: Collection name.
         :param metadata: Embedding collection metadata. Defaults to None.
         :param embedding_function: Embedding function for the collection. Defaults to base embedding function.
-        :return: Collection.
+        :return: Database API.
         """
-        if name not in self.collections:
-            self.collections[name] = self.default_client.get_or_create_collection(
-                name="base", metadata=metadata, embedding_function=self.base_embedding_function)
-        return self.collections[name]
+        if name not in self.databases:
+            self.databases[name] = Chroma(
+                persist_directory=self.peristant_directory,
+                embedding_function=self.base_embedding_function if embedding_function is None else embedding_function,
+                collection_name=name,
+                collection_metadata=metadata,
+                client_settings=Settings(
+                    persist_directory=self.peristant_directory)
+            )
+        return self.databases[name]
 
     def get_retriever(self, name: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
         """
@@ -133,7 +147,7 @@ class KnowledgeBaseController(object):
         :param search_kwargs: The retrievery search keyword arguments. Defaults to {"k": 4, "include_metadata": True}.
         :return: Retriever instance.
         """
-        self.collections.get(name, self.collections["base"]).as_retriever(
+        self.databases.get(name, self.databases["base"]).as_retriever(
             search_type=search_type, search_kwargs=search_kwargs
         )
 
@@ -144,8 +158,8 @@ class KnowledgeBaseController(object):
         :param documents: Documents to embed.
         :param ids: Custom IDs to add. Defaults to the hash of the document contents.
         """
-        self.collections.get(name, self.clients["base"]).add(documents=documents, ids=[
-            [hash_text_with_sha256(document.page_content) for document in documents]] if ids is None else ids)
+        self.databases[name].add_documents(documents=documents, ids=[
+            hash_text_with_sha256(document.page_content) for document in documents] if ids is None else ids)
 
     def load_folder(self, folder: str, target_collection: str = "base", splitting: Tuple[int] = None) -> None:
         """
@@ -171,11 +185,10 @@ class KnowledgeBaseController(object):
             supported_extension) for supported_extension in langchain_utility.DOCUMENT_LOADERS)]
         documents = []
 
-        with Pool(processes=os.cpu_count()) as pool:
-            with tqdm(total=len(document_paths), desc="(Re)loading folder contents...", ncols=80) as progress_bar:
-                for index, loaded_document in enumerate(pool.imap(reload_document, document_paths)):
-                    documents.append(loaded_document)
-                    progress_bar.update(index)
+        with tqdm(total=len(document_paths), desc="(Re)loading folder contents...", ncols=80) as progress_bar:
+            for index, document_path in enumerate(document_paths):
+                documents.append(reload_document(document_path))
+                progress_bar.update(index)
 
         if splitting is not None:
             documents = self.split_documents(documents, *splitting)
