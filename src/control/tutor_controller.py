@@ -20,6 +20,7 @@ class TutorController(object):
     """
     Class for controlling the main process.
     """
+
     def __init__(self) -> None:
         """
         Initiation method.
@@ -27,7 +28,7 @@ class TutorController(object):
         self.llm = None
         self.llm_type = None
         self.interface = None
-        self.knowledge_base = None
+        self.kb = None
         self.doc_types = {
             "base": {"splitting": None}
         }
@@ -41,14 +42,16 @@ class TutorController(object):
         self.llm = LlamaCpp(
             model_path=model_path,
             verbose=True)
-        
-    def load_knowledge_base(self, kb_path: str, kb_base_embedding_function: EmbeddingFunction) -> None:
+
+    def load_knowledge_base(self, kb_path: str, kb_base_embedding_function: EmbeddingFunction = None) -> None:
         """
         Method for loading knowledgebase.
         :param kb_path: Folder path to knowledgebase.
-        :param kb_base_embedding_function: Base embedding function to use for knowledgebase.
+        :param kb_base_embedding_function: Base embedding function to use for knowledgebase. 
+            Defaults to None in which case the knowledgebase default is used.
         """
-        self.knowledge_base = KnowledgeBaseController(peristant_directory=kb_path, base_embedding_function=kb_base_embedding_function)
+        self.kb = KnowledgeBaseController(
+            peristant_directory=kb_path, base_embedding_function=kb_base_embedding_function)
 
     def register_document_type(self, document_type: str, embedding_function: EmbeddingFunction = None, splitting: Tuple[int] = None) -> None:
         """
@@ -58,16 +61,17 @@ class TutorController(object):
         :param splitting: A tuple of chunk size and overlap for splitting. Defaults to None in which case the documents are not split.
         """
         self.doc_types[document_type] = {"splitting": splitting}
-        self.knowledge_base.get_or_create_client(document_type, embedding_function)
+        self.kb.get_or_create_collection(
+            document_type, embedding_function)
 
-        
     def load_documents(self, documents: List[Document], document_type: str = "base") -> None:
         """
         Method for loading documents into knowledgebase.
         :param documents: Documents to load.
         :param document_type: Name to identify the documen type. Defaults to "base".
         """
-        self.knowledge_base.embed_documents(name=document_type, documents=documents)
+        self.kb.embed_documents(
+            name=document_type, documents=documents)
 
     def load_files(self, file_paths: List[str], document_type: str = "base") -> None:
         """
@@ -75,16 +79,17 @@ class TutorController(object):
         :param folder: Folder path.
         :param document_type: Name to identify the documen type. Defaults to "base".
         """
-        self.knowledge_base.load_files(file_paths, document_type, self.doc_types.get(document_type, {}).get("splitting"))
+        self.kb.load_files(file_paths, document_type, self.doc_types.get(
+            document_type, {}).get("splitting"))
 
     def start_conversation(self):
         """
         Method for starting conversation.
         """
-        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+        memory = ConversationBufferMemory(
+            memory_key="chat_history", return_messages=True)
         conversation_chain = ConversationalRetrievalChain(
             llm=self.llm,
-            retriever=self.knowledge_base.get_retriever(),
+            retriever=self.kb.get_retriever(),
             memory=memory
         )
-
