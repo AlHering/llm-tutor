@@ -27,3 +27,7 @@ def run_app() -> None:
         st.file_uploader("Skripts")
         st.file_uploader("Presentations")
         st.file_uploader("Books")
+
+
+if __name__ == "__main__":
+    run_app()
