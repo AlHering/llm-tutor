@@ -1,4 +1,4 @@
-langchain==0.0.243
+langchain==0.0.245
 chromadb==0.4.3
 openai==0.27.7
 pygpt4all==1.1.0
