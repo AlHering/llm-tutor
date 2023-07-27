@@ -5,6 +5,7 @@
 *            (c) 2023 Alexander Hering             *
 ****************************************************
 """
+import os
 from typing import Any, List
 import chromadb
 from chromadb.api.types import EmbeddingFunction, Embeddings
@@ -24,6 +25,8 @@ class KnowledgeBaseController(object):
         :param peristant_directory: Persistant directory for ChromaDB data.
         :param base_embedding_function: Embedding function for base client.
         """
+        if not os.path.exists(peristant_directory):
+            os.makedirs(peristant_directory)
         self.peristant_directory = peristant_directory
         self.base_embedding_function = base_embedding_function
         self.client_settings = Settings(
