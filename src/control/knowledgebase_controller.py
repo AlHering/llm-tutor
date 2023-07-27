@@ -17,7 +17,7 @@ from langchain.chains import RetrievalQA
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from multiprocessing import Pool
 from tqdm import tqdm
-from src.utility import langchain_utility
+from src.utility.bronze import langchain_utility
 
 
 def reload_document(document_path: str) -> Document:
