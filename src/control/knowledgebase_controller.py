@@ -104,11 +104,22 @@ class KnowledgeBaseController(object):
         :param target_client: Client/collection to handle folder contents. Defaults to "base".
         :param splitting: A tuple of chunk size and overlap for splitting. Defaults to None in which case the documents are not split.
         """
-        document_paths = []
-        documents = []
+        file_paths = []
         for root, dirs, files in os.walk(folder, topdown=True):
-            document_paths.extend([os.path.join(root, file) for file in files if any(file.lower().endswith(
-                supported_extension) for supported_extension in langchain_utility.DOCUMENT_LOADERS)])
+            file_paths.extend([os.path.join(root, file) for file in files])
+
+        self.load_files(file_paths, target_client, splitting)
+
+    def load_files(self, file_paths: List[str], target_client: str = "base", splitting: Tuple[int] = None) -> None:
+        """
+        Method for (re)loading file paths.
+        :param file_paths: List of file paths.
+        :param target_client: Client/collection to handle folder contents. Defaults to "base".
+        :param splitting: A tuple of chunk size and overlap for splitting. Defaults to None in which case the documents are not split.
+        """
+        document_paths = [file for file in file_paths if any(file.lower().endswith(
+                supported_extension) for supported_extension in langchain_utility.DOCUMENT_LOADERS)]
+        documents = []
 
         with Pool(processes=os.cpu_count()) as pool:
             with tqdm(total=len(document_paths), desc="(Re)loading folder contents...", ncols=80) as progress_bar:
@@ -118,7 +129,7 @@ class KnowledgeBaseController(object):
 
         if splitting is not None:
             documents = self.split_documents(documents, *splitting)
-        
+
         self.embed_documents(target_client, documents)
 
     def split_documents(self, documents: List[Document], split: int, overlap: int) -> List[Document]:
