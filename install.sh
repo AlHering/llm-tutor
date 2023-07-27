@@ -17,7 +17,7 @@ printf "\n%s\n" "${delimiter}"
 printf "Setting up conda environment..."
 printf "\n%s\n" "${delimiter}"
 conda activate "$VENV_DIR"
-conda install -y -k pytorch[version=2,build=py3.10_cuda11.7*] torchvision torchaudio pytorch-cuda=11.7 cuda-toolkit ninja git -c pytorch -c nvidia/label/cuda-11.7.0 -c nvidia
+conda install -y -k  $CONDA_TORCH_CUDA_INSTALLATION
 
 printf "\n%s\n" "${delimiter}"
 printf "Handling main webui requirements..."

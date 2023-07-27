@@ -14,6 +14,7 @@ WORKDIR /project
 ENV RUNNING_IN_DOCKER True
 ENV CONDA_DIR "/project/conda"
 ENV VENV_DIR "/project/venv"
+ENV CONDA_TORCH_CUDA_INSTALLATION = "pytorch[version=2,build=py3.10_cuda11.7*] torchvision torchaudio pytorch-cuda=11.7 cuda-toolkit ninja git -c pytorch -c nvidia/label/cuda-11.7.0 -c nvidia"
 
 # Install prerequisits
 RUN apt add-repository -y ppa:deadsnakes/ppa apt-get update && apt-get install -y apt-utils \
