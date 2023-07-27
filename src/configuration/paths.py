@@ -15,3 +15,7 @@ SUBMODULE_PATH = os.path.join(SOURCE_PATH, "submodules")
 DATA_PATH = os.path.join(PACKAGE_PATH, "data")
 PLUGIN_PATH = os.path.join(SOURCE_PATH, "plugins")
 DUMP_PATH = os.path.join(DATA_PATH, "processes", "dumps")
+TEXTGENERATION_MODEL_PATH = os.path.join(
+    PACKAGE_PATH, "machine_learning_models", "MODELS")
+TEXTGENERATION_LORA_PATH = os.path.join(
+    PACKAGE_PATH, "machine_learning_models", "LORAS")
