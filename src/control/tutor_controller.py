@@ -50,15 +50,15 @@ class TutorController(object):
         """
         self.knowledge_base = KnowledgeBaseController(peristant_directory=kb_path, base_embedding_function=kb_base_embedding_function)
 
-    def register_document_type(self, documen_type: str, embedding_function: EmbeddingFunction = None, splitting: Tuple[int] = None) -> None:
+    def register_document_type(self, document_type: str, embedding_function: EmbeddingFunction = None, splitting: Tuple[int] = None) -> None:
         """
         Method for registering a document type.
-        :param documen_type: Name to identify the documen type.
+        :param document_type: Name to identify the documen type.
         :param embedding_function: Embedding function the document type. Defaults to base embedding function.
         :param splitting: A tuple of chunk size and overlap for splitting. Defaults to None in which case the documents are not split.
         """
-        self.doc_types[documen_type] = {"splitting": splitting}
-        self.knowledge_base.get_or_create_client(documen_type, embedding_function)
+        self.doc_types[document_type] = {"splitting": splitting}
+        self.knowledge_base.get_or_create_client(document_type, embedding_function)
 
         
     def load_documents(self, documents: List[Document], document_type: str = "base") -> None:
