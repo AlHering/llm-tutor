@@ -15,6 +15,7 @@ from transformers import AutoTokenizer, AutoModel
 from langchain.embeddings.base import Embeddings as LCEmbeddings
 from typing import List
 from sentence_transformers import SentenceTransformer
+from ..bronze import json_utility
 
 
 class LocalHuggingFaceEmbeddings(LCEmbeddings):
@@ -27,7 +28,15 @@ class LocalHuggingFaceEmbeddings(LCEmbeddings):
         Initiation method.
         :param model_path: Model path.
         """
-        self.embedding_model = SentenceTransformer(model_path)
+        try:
+            self.embedding_model = SentenceTransformer(model_path)
+        except TypeError as ex:
+            if str(ex) == "Pooling.__init__() got an unexpected keyword argument 'pooling_mode_weightedmean_tokens'":
+                print(
+                    "Encountered error (https://huggingface.co/hkunlp/instructor-base/discussions/6), adjusting local files.")
+                print(
+                    f"Try 'pip install --force --no-deps git+https://github.com/UKPLab/sentence-transformers.git'")
+                raise ex
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """
@@ -35,7 +44,7 @@ class LocalHuggingFaceEmbeddings(LCEmbeddings):
         :param texts: Texts.
         :return: A list of embeddings for each text in the form of a list of floats.
         """
-        return self.embedding_model.encode(texts)
+        return [embedding.tolist() for embedding in self.embedding_model.encode(texts)]
 
     def embed_query(self, query: str) -> List[float]:
         """
@@ -43,7 +52,7 @@ class LocalHuggingFaceEmbeddings(LCEmbeddings):
         :param query: Query.
         :return: The embedding for the given queryin the form of a list of floats.
         """
-        return self.model.encode([query])[0]
+        return self.embedding_model.encode([query])[0].tolist()
 
 
 class T5EmbeddingFunction(EmbeddingFunction):
