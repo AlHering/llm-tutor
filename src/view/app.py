@@ -6,8 +6,17 @@
 *            (c) 2023 Alexander Hering             *
 ****************************************************
 """
+import os
+import asyncio
 import streamlit as st
+from src.configuration import configuration as cfg
 from src.view.chat_template import css, bot_template, user_template
+from langchain.docstore.document import Document
+import json
+import requests
+
+
+BACKEND_BASE_URL = "http://127.0.0.1:7861"
 
 
 def handle_user_query(query):
@@ -18,25 +27,40 @@ def handle_user_query(query):
     pass
 
 
-def handle_file_loading(file_paths, doc_type, splitting=None):
-    """
-    Function for handling document loading.
-    :param file_paths: File paths.
-    :param doc_type: Document type.
-    """
-    if doc_type not in st.session_state.controller.doc_types:
-        st.session_state.controller.register_document_type(
-            doc_type, splitting=splitting)
-    st.session_state.controller.load_files(file_paths, doc_type)
+def handle_request(method: str, endpoint: str, data: dict = None):
+    print(f"{method} :: {endpoint} :: {data}")
+    try:
+        response = {"get": requests.get, "post": requests.post}[
+            method](f"{BACKEND_BASE_URL}{endpoint}", json=data)
+
+    except requests.exceptions.SSLError:
+        print("SSL Error")
+        response = {"get": requests.get, "post": requests.post}[
+            method](f"{BACKEND_BASE_URL}{endpoint}", json=data, verify=False)
+    try:
+        res = json.loads(response.content.decode('utf-8'))
+    except json.decoder.JSONDecodeError:
+        res = response.text
+    print(res)
+    return res
 
 
-def run_app(controller) -> None:
+def run_app() -> None:
     """
     Function for running app.
     """
-    st.session_state.controller = controller
-    for doc_type in ["skript", "presentation", "book"]:
-        controller.kb.get_or_create_collection(doc_type)
+    resp = handle_request("get", "/")
+    if resp["message"] == "System is stopped":
+        resp = handle_request("post", "/start")
+        print(resp)
+        resp = handle_request("post", "/load_llm", {
+            "model_path": os.path.join(cfg.PATHS.TEXTGENERATION_MODEL_PATH,
+                                       "TheBloke_orca_mini_7B-GGML/orca-mini-7b.ggmlv3.q4_1.bin"),
+            "model_type": "llm"
+        })
+        print(resp)
+        resp = handle_request("post", "/load_kb")
+        print(resp)
 
     st.set_page_config(
         page_title="LLM Tutor",
@@ -61,7 +85,12 @@ def run_app(controller) -> None:
             with st.spinner("Processing"):
                 for doc_type in files:
                     if files[doc_type]:
-                        handle_file_loading(files[doc_type], doc_type)
+                        resp = handle_request("post", "/embed", data={"documents":
+                                                                      [{"page_content": f.read().decode("utf-8"), "metadata": {"file_name": f.name,
+                                                                                                                               "file_size": f.size, "file_type": f.type}} for f in files[doc_type]]
+                                                                      })
+                        print(resp)
+                        files[doc_type].clear()
 
 
 if __name__ == "__main__":
