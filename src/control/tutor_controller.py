@@ -13,6 +13,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains import RetrievalQA
 from langchain.indexes import VectorstoreIndexCreator
+from uuid import uuid4
 from src.control.knowledgebase_controller import KnowledgeBaseController, EmbeddingFunction, Embeddings, Document
 
 
@@ -32,6 +33,7 @@ class TutorController(object):
         self.doc_types = {
             "base": {"splitting": None}
         }
+        self.conversations = {}
 
     def load_general_llm(self, model_path: str, model_type: str) -> None:
         """
@@ -41,7 +43,8 @@ class TutorController(object):
         """
         self.llm = LlamaCpp(
             model_path=model_path,
-            verbose=True)
+            verbose=True,
+            n_ctx=2048)
 
     def load_knowledge_base(self, kb_path: str, kb_base_embedding_function: EmbeddingFunction = None) -> None:
         """
@@ -82,14 +85,30 @@ class TutorController(object):
         self.kb.load_files(file_paths, document_type, self.doc_types.get(
             document_type, {}).get("splitting"))
 
-    def start_conversation(self):
+    def start_conversation(self, use_uuid: str = None, document_type: str = "base") -> str:
         """
         Method for starting conversation.
+        :param use_uuid: UUID to start conversation under. Defaults to newly generated UUID.
+        :param document_type: Target document type. Defaults to "base".
+        :return: Conversation UUID.
         """
+        uuid = str(uuid4()) if use_uuid is None else use_uuid
         memory = ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True)
-        conversation_chain = ConversationalRetrievalChain(
+            memory_key=f"chat_history", return_messages=True)
+        self.conversations[uuid] = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
-            retriever=self.kb.get_retriever(),
+            retriever=self.kb.get_retriever(document_type),
             memory=memory
         )
+        return uuid
+
+    def query(self, conversation_uuid: str, query: str) -> dict:
+        """
+        Method for querying via conversation.
+        :param conversation_uuid: UUID of conversation to run query on.
+        :param query: Query to run.
+        :return: Query results.
+        """
+        if conversation_uuid not in self.conversations:
+            self.start_conversation(use_uuid=conversation_uuid)
+        return self.conversations[conversation_uuid]({"question": query})
