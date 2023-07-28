@@ -158,12 +158,14 @@ cython_debug/
 .vscode/
 
 # Custom additions
-data/*
+data/
 docs/literature
 docs/literature
 docs/todo
 configuration/*.env
-machine_learning_models/*
+machine_learning_models/LORAS/*
+machine_learning_models/MODELS/*
+machine_learning_models/EMBEDDING_MODELS/*
 
 # Exceptions
 !machine_learning_models/LORAS/mount ML LoRAs here.txt
