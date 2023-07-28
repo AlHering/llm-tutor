@@ -24,6 +24,7 @@ from torch import Tensor
 from transformers import AutoTokenizer, AutoModel
 from tqdm import tqdm
 from src.utility.bronze import langchain_utility
+from src.utility.silver import embedding_utility
 
 
 def reload_document(document_path: str) -> Document:
@@ -35,60 +36,6 @@ def reload_document(document_path: str) -> Document:
     res = langchain_utility.DOCUMENT_LOADERS[os.path.splitext(document_path)[
         1]](document_path).load()
     return res[0] if isinstance(res, list) and len(res) == 1 else res
-
-
-class T5EmbeddingFunction(EmbeddingFunction):
-    """
-    EmbeddingFunction utilizing the "intfloat_e5-large-v2" model.
-    (https://huggingface.co/intfloat/e5-large-v2)
-    """
-    tokenizer = AutoTokenizer.from_pretrained(
-        cfg.PATHS.E5_LARGE_V3_PATH, local_files_only=True)
-    model = AutoModel.from_pretrained(
-        cfg.PATHS.E5_LARGE_V3_PATH, local_files_only=True)
-
-    def embed_documents(self, texts: Documents) -> Embeddings:
-        """
-        Method handling embedding.
-        :param texts: Texts to embed.
-        """
-        # Taken from https://huggingface.co/intfloat/e5-large-v2 and adjusted
-        # Tokenize the input texts
-        batch_dict = self.tokenizer(texts, max_length=512,
-                                    padding=True, truncation=True, return_tensors='pt')
-
-        outputs = self.model(**batch_dict)
-        embeddings = self.average_pool(outputs.last_hidden_state,
-                                       batch_dict['attention_mask'])
-
-        # normalize embeddings
-        embeddings = F.normalize(embeddings, p=2, dim=1)
-        return embeddings.tolist()
-
-    def embed_query(self, query: str) -> Embeddings:
-        """
-        Method for embedding query.
-        :param query: Query.
-        :return: Query embedding.
-        """
-        batch_dict = self.tokenizer(query, max_length=512,
-                                    padding=True, truncation=True, return_tensors='pt')
-
-        outputs = self.model(**batch_dict)
-        embeddings = self.average_pool(outputs.last_hidden_state,
-                                       batch_dict['attention_mask'])
-
-        # normalize embeddings
-        embeddings = F.normalize(embeddings, p=2, dim=1)
-        return embeddings.tolist()
-
-    def average_pool(self, last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
-        """
-        Average pooling function, taken from https://huggingface.co/intfloat/e5-large-v2.
-        """
-        last_hidden = last_hidden_states.masked_fill(
-            ~attention_mask[..., None].bool(), 0.0)
-        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
 
 class KnowledgeBaseController(object):
@@ -106,19 +53,14 @@ class KnowledgeBaseController(object):
         if not os.path.exists(peristant_directory):
             os.makedirs(peristant_directory)
         self.peristant_directory = peristant_directory
-        self.base_embedding_function = T5EmbeddingFunction(
+        self.base_embedding_function = embedding_utility.LocalHuggingFaceEmbeddings(
+            cfg.PATHS.INSTRUCT_XL_PATH
         ) if base_embedding_function is None else base_embedding_function
+        self.client_settings = Settings(persist_directory=peristant_directory,
+                                        chroma_db_impl='duckdb+parquet')
 
-        self.base_chromadb = Chroma(
-            persist_directory=peristant_directory,
-            embedding_function=self.base_embedding_function,
-            collection_name="base",
-            client_settings=Settings(persist_directory=peristant_directory)
-        )
-
-        self.databases = {
-            "base": self.base_chromadb
-        }
+        self.databases = {}
+        self.base_chromadb = self.get_or_create_collection("base")
 
     def get_or_create_collection(self, name: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Chroma:
         """
@@ -134,8 +76,7 @@ class KnowledgeBaseController(object):
                 embedding_function=self.base_embedding_function if embedding_function is None else embedding_function,
                 collection_name=name,
                 collection_metadata=metadata,
-                client_settings=Settings(
-                    persist_directory=self.peristant_directory)
+                client_settings=self.client_settings
             )
         return self.databases[name]
 
@@ -147,7 +88,10 @@ class KnowledgeBaseController(object):
         :param search_kwargs: The retrievery search keyword arguments. Defaults to {"k": 4, "include_metadata": True}.
         :return: Retriever instance.
         """
-        self.databases.get(name, self.databases["base"]).as_retriever(
+        db = self.databases.get(name, self.databases["base"])
+        search_kwargs["k"] = min(
+            search_kwargs["k"], len(db.get()["ids"]))
+        return db.as_retriever(
             search_type=search_type, search_kwargs=search_kwargs
         )
 
@@ -160,6 +104,7 @@ class KnowledgeBaseController(object):
         """
         self.databases[name].add_documents(documents=documents, ids=[
             hash_text_with_sha256(document.page_content) for document in documents] if ids is None else ids)
+        self.databases[name].persist()
 
     def load_folder(self, folder: str, target_collection: str = "base", splitting: Tuple[int] = None) -> None:
         """
