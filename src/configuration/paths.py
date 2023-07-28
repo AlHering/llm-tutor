@@ -27,5 +27,9 @@ TEXTGENERATION_MODEL_PATH = os.path.join(
     PACKAGE_PATH, "machine_learning_models", "MODELS")
 TEXTGENERATION_LORA_PATH = os.path.join(
     PACKAGE_PATH, "machine_learning_models", "LORAS")
+EMBEDDING_MODEL_PATH = os.path.join(
+    PACKAGE_PATH, "machine_learning_models", "EMBEDDING_MODELS")
 E5_LARGE_V3_PATH = os.path.join(
-    TEXTGENERATION_MODEL_PATH, "intfloat_e5-large-v2")
+    EMBEDDING_MODEL_PATH, "intfloat_e5-large-v2")
+INSTRUCT_XL_PATH = os.path.join(
+    EMBEDDING_MODEL_PATH, "hkunlp_instructor-xl")
