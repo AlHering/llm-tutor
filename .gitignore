@@ -163,7 +163,7 @@ docs/literature
 docs/literature
 docs/todo
 configuration/*.env
-machine_learning_models/
+machine_learning_models/*
 
 # Exceptions
 !machine_learning_models/LORAS/mount ML LoRAs here.txt
