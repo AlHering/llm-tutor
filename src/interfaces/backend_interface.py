@@ -145,7 +145,7 @@ def post_start_conversation(conversation_uuid: str = None, collection: str = Non
     global CONTROLLER
     if STARTED == True:
         if CONTROLLER.kb is not None:
-            return {"result": CONTROLLER.start_conversation(conversation_uuid, collection)}
+            return {"conversation": CONTROLLER.start_conversation(conversation_uuid, collection)}
         else:
             return {"message": f"No knowledgebase loaded!"}
     else:

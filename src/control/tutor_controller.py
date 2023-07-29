@@ -111,8 +111,11 @@ class TutorController(object):
         :return: Query results.
         """
         if conversation_uuid not in self.conversations:
-            self.start_conversation(use_uuid=conversation_uuid)
-        return self.conversations[conversation_uuid]({"question": query})
+            conversation_uuid = self.start_conversation(
+                use_uuid=conversation_uuid)
+        result = self.conversations[conversation_uuid]({"question": query})
+        result["conversation"] = conversation_uuid
+        return result
 
     def query(self, query: str, document_type: str = None, include_source: bool = True) -> dict:
         """
