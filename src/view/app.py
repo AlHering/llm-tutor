@@ -86,9 +86,11 @@ def run_app() -> None:
                 for doc_type in files:
                     if files[doc_type]:
                         data = {"documents": [
-                            {"page_content": f.read().decode("utf-8"),
-                             "metadata": {"file_name": f.name, "file_size": f.size, "file_type": f.type}}
-                            for f in files[doc_type]]}
+                                {"page_content": f.read().decode("utf-8"),
+                                 "metadata": {"file_name": f.name, "file_size": f.size, "file_type": f.type},
+                                 "collection": doc_type
+                                 }
+                                for f in files[doc_type]]}
                         resp = handle_request("post", "/embed", data=data)
                         print(resp)
                         files[doc_type].clear()
