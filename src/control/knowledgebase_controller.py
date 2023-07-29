@@ -40,7 +40,7 @@ def reload_document(document_path: str) -> Document:
 
 class KnowledgeBaseController(object):
     """
-    Class for hanling knowledge base interaction.
+    Class for handling knowledge base interaction with ChromaDB.
     """
 
     def __init__(self, peristant_directory: str, metadata: dict = None, base_embedding_function: EmbeddingFunction = None) -> None:
