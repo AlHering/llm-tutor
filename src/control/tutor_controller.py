@@ -14,7 +14,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.chains import RetrievalQA
 from langchain.indexes import VectorstoreIndexCreator
 from uuid import uuid4
-from src.control.knowledgebase_controller import KnowledgeBaseController, EmbeddingFunction, Embeddings, Document
+from src.control.chroma_knowledgebase_controller import ChromaKnowledgeBase, EmbeddingFunction, Embeddings, Document
 
 
 class TutorController(object):
@@ -53,7 +53,7 @@ class TutorController(object):
         :param kb_base_embedding_function: Base embedding function to use for knowledgebase. 
             Defaults to None in which case the knowledgebase default is used.
         """
-        self.kb = KnowledgeBaseController(
+        self.kb = ChromaKnowledgeBase(
             peristant_directory=kb_path, base_embedding_function=kb_base_embedding_function)
 
     def register_document_type(self, document_type: str, embedding_function: EmbeddingFunction = None, splitting: Tuple[int] = None) -> None:
