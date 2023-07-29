@@ -66,29 +66,30 @@ class TutorController(object):
         self.kb.get_or_create_collection(
             document_type, embedding_function)
 
-    def load_documents(self, documents: List[Document], document_type: str = "base") -> None:
+    def load_documents(self, documents: List[Document], document_type: str = None) -> None:
         """
         Method for loading documents into knowledgebase.
         :param documents: Documents to load.
         :param document_type: Name to identify the documen type. Defaults to "base".
         """
         self.kb.embed_documents(
-            name=document_type, documents=documents)
+            name="base" if document_type is None else document_type, documents=documents)
 
-    def load_files(self, file_paths: List[str], document_type: str = "base") -> None:
+    def load_files(self, file_paths: List[str], document_type: str = None) -> None:
         """
         Method for (re)loading folder contents.
         :param folder: Folder path.
         :param document_type: Name to identify the documen type. Defaults to "base".
         """
+        document_type = "base" if document_type is None else document_type
         self.kb.load_files(file_paths, document_type, self.doc_types.get(
             document_type, {}).get("splitting"))
 
-    def start_conversation(self, use_uuid: str = None, document_type: str = "base") -> str:
+    def start_conversation(self, use_uuid: str = None, document_type: str = None) -> str:
         """
         Method for starting conversation.
         :param use_uuid: UUID to start conversation under. Defaults to newly generated UUID.
-        :param document_type: Target document type. Defaults to "base".
+        :param document_type: Target document type. Defaults to None in which case "base" is set.
         :return: Conversation UUID.
         """
         uuid = str(uuid4()) if use_uuid is None else use_uuid
@@ -96,7 +97,8 @@ class TutorController(object):
             memory_key=f"chat_history", return_messages=True)
         self.conversations[uuid] = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
-            retriever=self.kb.get_retriever(document_type),
+            retriever=self.kb.get_retriever(
+                "base" if document_type is None else document_type),
             memory=memory
         )
         return uuid
@@ -112,15 +114,16 @@ class TutorController(object):
             self.start_conversation(use_uuid=conversation_uuid)
         return self.conversations[conversation_uuid]({"question": query})
 
-    def query(self, query: str, document_type: str = "base", include_source: bool = True) -> dict:
+    def query(self, query: str, document_type: str = None, include_source: bool = True) -> dict:
         """
         Method for direct querying.
         :param query: Query to run.
-        :param document_type: Document type for querying. Defaults to "base".
+        :param document_type: Target document type. Defaults to None in which case "base" is set.
         :param include_source: Flag for declaring whether to include source. Defaults to True.
         :return: Query results.
         """
         return RetrievalQA.from_chain_type(
             llm=self.llm,
-            retriever=self.kb.get_retriever(document_type),
+            retriever=self.kb.get_retriever(
+                "base" if document_type is None else document_type),
             return_source_documents=include_source)(query)

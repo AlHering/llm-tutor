@@ -85,7 +85,7 @@ def post_start() -> dict:
 def post_load_llm(llm_description: LLMDescription) -> dict:
     """
     Endpoint for loading models.
-    param llm_description: LLM description configuring loading parameters.
+    :param llm_description: LLM description configuring loading parameters.
     :return: Response.
     """
     global STARTED
@@ -114,17 +114,18 @@ def post_load_kb() -> dict:
 
 
 @BACKEND.post("/embed")
-def post_embed(docs: DocumentList) -> dict:
+def post_embed(docs: DocumentList, collection: str = None) -> dict:
     """
     Endpoint for embedding a list of documents.
-    param docs: List of documents to embed.
+    :param docs: List of documents to embed.
+    :param collection: Collection to embed documents in. Defaults to None in which case default the collection is set.
     :return: Response.
     """
     global STARTED
     global CONTROLLER
     if STARTED == True:
         if CONTROLLER.kb is not None:
-            CONTROLLER.load_documents(docs.documents)
+            CONTROLLER.load_documents(docs.documents, collection)
             return {"message": f"Documents loaded."}
         else:
             return {"message": f"No knowledgebase loaded!"}
@@ -133,28 +134,29 @@ def post_embed(docs: DocumentList) -> dict:
 
 
 @BACKEND.post("/start_conversation")
-def post_start_conversation(conversation_uuid: str = None) -> dict:
+def post_start_conversation(conversation_uuid: str = None, collection: str = None) -> dict:
     """
     Endpoint for starting conversation.
-    param conversation_uuid: UUID to start conversation with. Defaults to None in which case a UUID is generated.
+    :param conversation_uuid: UUID to start conversation with. Defaults to None in which case a UUID is generated.
+    :param collection: Collection to embed documents in. Defaults to None in which case default the collection is set.
     :return: Response.
     """
     global STARTED
     global CONTROLLER
     if STARTED == True:
         if CONTROLLER.kb is not None:
-            return {"result": CONTROLLER.start_conversation(conversation_uuid)}
+            return {"result": CONTROLLER.start_conversation(conversation_uuid, collection)}
         else:
             return {"message": f"No knowledgebase loaded!"}
     else:
         return {"message": f"System is stopped!"}
 
 
-@BACKEND.post("/query_conversation")
-def post_query(query: str, conversation_uuid: str = None) -> dict:
+@BACKEND.post("/conversation_query")
+def post_conversation_query(query: str, conversation_uuid: str = None) -> dict:
     """
     Endpoint for sending query into conversation.
-    param query: Query to send.
+    :param query: Query to send.
     :param conversation_uuid: UUID of conversation to send query to. Defaults to None in which case a new conversation ist started.
     :return: Response.
     """
@@ -170,17 +172,19 @@ def post_query(query: str, conversation_uuid: str = None) -> dict:
 
 
 @BACKEND.post("/query")
-def post_query(query: str) -> dict:
+def post_query(query: str, collection: str = None, include_source: bool = True) -> dict:
     """
     Endpoint for querying knowledgebase.
-    param query: Query to send.
+    :param query: Query to send.
+    :param collection: Collection to embed documents in. Defaults to None in which case default the collection is set.
+    :param include_source: Flag for declaring whether to include source. Defaults to True.
     :return: Response.
     """
     global STARTED
     global CONTROLLER
     if STARTED == True:
         if CONTROLLER.kb is not None:
-            return {"result": CONTROLLER.query(query)}
+            return {"result": CONTROLLER.query(query, collection, include_source)}
         else:
             return {"message": f"No knowledgebase loaded!"}
     else:
