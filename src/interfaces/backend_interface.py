@@ -118,13 +118,26 @@ def post_start_conversation(conversation_uuid: str = None):
         return {"message": f"System is stopped!"}
 
 
-@BACKEND.post("/query")
+@BACKEND.post("/query_conversation")
 def post_query(query: str, conversation_uuid: str = None):
     global STARTED
     global CONTROLLER
     if STARTED == True:
         if CONTROLLER.kb is not None:
-            return {"result": CONTROLLER.query(conversation_uuid, query)}
+            return {"result": CONTROLLER.conversational_query(conversation_uuid, query)}
+        else:
+            return {"message": f"No knowledgebase loaded!"}
+    else:
+        return {"message": f"System is stopped!"}
+
+
+@BACKEND.post("/query")
+def post_query(query: str):
+    global STARTED
+    global CONTROLLER
+    if STARTED == True:
+        if CONTROLLER.kb is not None:
+            return {"result": CONTROLLER.query(query)}
         else:
             return {"message": f"No knowledgebase loaded!"}
     else:

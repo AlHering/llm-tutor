@@ -8,6 +8,7 @@
 """
 from typing import Any, List, Tuple
 from langchain.llms import LlamaCpp
+from langchain.chains import RetrievalQA
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from uuid import uuid4
@@ -100,7 +101,7 @@ class TutorController(object):
         )
         return uuid
 
-    def query(self, conversation_uuid: str, query: str) -> dict:
+    def conversational_query(self, conversation_uuid: str, query: str) -> dict:
         """
         Method for querying via conversation.
         :param conversation_uuid: UUID of conversation to run query on.
@@ -110,3 +111,16 @@ class TutorController(object):
         if conversation_uuid not in self.conversations:
             self.start_conversation(use_uuid=conversation_uuid)
         return self.conversations[conversation_uuid]({"question": query})
+
+    def query(self, query: str, document_type: str = "base", include_source: bool = True) -> dict:
+        """
+        Method for direct querying.
+        :param query: Query to run.
+        :param document_type: Document type for querying. Defaults to "base".
+        :param include_source: Flag for declaring whether to include source. Defaults to True.
+        :return: Query results.
+        """
+        return RetrievalQA.from_chain_type(
+            llm=self.llm,
+            retriever=self.kb.get_retriever(document_type),
+            return_source_documents=include_source)(query)
