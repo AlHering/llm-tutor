@@ -3,8 +3,9 @@ An LLM-powered tutoring frontend for Q&amp;Aing learning materials
 
 
 # TODO
-- cleanup control structures and utility
-- cleanup interface
+- clean up control structures and utility
+- clean up app
+- clean up interface
 - parameterize interface
 - integrate streamlit into Common Flask Frontend (iframes)
 - add parameterized model loading for different types to utility
