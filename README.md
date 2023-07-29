@@ -9,5 +9,7 @@ An LLM-powered tutoring frontend for Q&amp;Aing learning materials
 - parameterize interface
 - integrate streamlit into Common Flask Frontend (iframes)
 - add parameterized model loading for different types to utility
+    - read in available local models and interface
+    - allow for downloading and storing models from Huggingface
 - add resource-monitoring and guards for resource-heavy functionality
 - add finetuning utility
