@@ -56,7 +56,7 @@ def run_app() -> None:
         resp = handle_request("post", "/load_llm", {
             "model_path": os.path.join(cfg.PATHS.TEXTGENERATION_MODEL_PATH,
                                        "TheBloke_orca_mini_7B-GGML/orca-mini-7b.ggmlv3.q4_1.bin"),
-            "model_type": "llm"
+            "model_type": "llamacpp"
         })
         print(resp)
         resp = handle_request("post", "/load_kb")

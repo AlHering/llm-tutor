@@ -8,11 +8,8 @@
 """
 from typing import Any, List, Tuple
 from langchain.llms import LlamaCpp
-from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from langchain.chains import RetrievalQA
-from langchain.indexes import VectorstoreIndexCreator
 from uuid import uuid4
 from src.control.chroma_knowledgebase_controller import ChromaKnowledgeBase, EmbeddingFunction, Embeddings, Document
 
@@ -35,16 +32,17 @@ class TutorController(object):
         }
         self.conversations = {}
 
-    def load_general_llm(self, model_path: str, model_type: str) -> None:
+    def load_general_llm(self, model_path: str, model_type: str = "llamacpp") -> None:
         """
         Method for (re)loading main LLM.
         :param model_path: Model path.
-        :param model_type: Model type frmo 'llm', 'chat', 'instruct'
+        :param model_type: Model type frmo 'llamacpp', 'chat', 'instruct'. Defaults to 'llamacpp'.
         """
-        self.llm = LlamaCpp(
-            model_path=model_path,
-            verbose=True,
-            n_ctx=2048)
+        if model_type == "llamacpp":
+            self.llm = LlamaCpp(
+                model_path=model_path,
+                verbose=True,
+                n_ctx=2048)
 
     def load_knowledge_base(self, kb_path: str, kb_base_embedding_function: EmbeddingFunction = None) -> None:
         """
