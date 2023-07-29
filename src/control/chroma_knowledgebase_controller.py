@@ -23,6 +23,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from transformers import AutoTokenizer, AutoModel
 from tqdm import tqdm
+from src.model.knowledgebase_control.abstract_knowledgebase_controller import KnowledgeBaseController
 from src.utility.bronze import langchain_utility
 from src.utility.silver import embedding_utility
 
@@ -38,7 +39,7 @@ def reload_document(document_path: str) -> Document:
     return res[0] if isinstance(res, list) and len(res) == 1 else res
 
 
-class KnowledgeBaseController(object):
+class ChromaKnowledgeBase(KnowledgeBaseController):
     """
     Class for handling knowledge base interaction with ChromaDB.
     """
@@ -62,6 +63,7 @@ class KnowledgeBaseController(object):
         self.databases = {}
         self.base_chromadb = self.get_or_create_collection("base")
 
+    # Override
     def get_or_create_collection(self, name: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Chroma:
         """
         Method for retrieving or creating a collection.
@@ -80,6 +82,7 @@ class KnowledgeBaseController(object):
             )
         return self.databases[name]
 
+    # Override
     def get_retriever(self, name: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
         """
         Method for acquiring a retriever.
@@ -95,6 +98,7 @@ class KnowledgeBaseController(object):
             search_type=search_type, search_kwargs=search_kwargs
         )
 
+    # Override
     def embed_documents(self, name: str, documents: List[Document], ids: List[str] = None):
         """
         Method for embedding documents.
@@ -106,6 +110,7 @@ class KnowledgeBaseController(object):
             hash_text_with_sha256(document.page_content) for document in documents] if ids is None else ids)
         self.databases[name].persist()
 
+    # Override
     def load_folder(self, folder: str, target_collection: str = "base", splitting: Tuple[int] = None) -> None:
         """
         Method for (re)loading folder contents.
@@ -119,6 +124,7 @@ class KnowledgeBaseController(object):
 
         self.load_files(file_paths, target_collection, splitting)
 
+    # Override
     def load_files(self, file_paths: List[str], target_collection: str = "base", splitting: Tuple[int] = None) -> None:
         """
         Method for (re)loading file paths.
@@ -140,6 +146,7 @@ class KnowledgeBaseController(object):
 
         self.embed_documents(target_collection, documents)
 
+    # Override
     def split_documents(self, documents: List[Document], split: int, overlap: int) -> List[Document]:
         """
         Method for splitting document content.
