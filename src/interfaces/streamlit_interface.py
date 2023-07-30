@@ -14,6 +14,16 @@ from src.configuration import configuration as cfg
 BACKEND_BASE_URL = f"http://{cfg.BACKEND_HOST}:{cfg.BACKEND_PORT}"
 
 
+def start_controller_if_stopped() -> None:
+    """
+    Function for checking and starting controller if stopped.
+    """
+    resp = handle_request("get", "/")
+    if resp["message"] == "System is stopped":
+        resp = handle_request("post", "/start")
+        cfg.LOGGER.info(f"[Streamlit] Controller started: {resp}")
+
+
 def handle_user_question(question: str) -> str:
     """
     Function for handling user question.
