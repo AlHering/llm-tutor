@@ -109,7 +109,7 @@ class PluginController(object):
             wrapper = GenericPlugin
 
         # compute security hash
-        security_hash = self.security_hashes.get(
+        security_hash = None if self.security_hashes is None else self.security_hashes.get(
             plugin_info["type"], {}).get(plugin_info["name"], None)
 
         # create, catalogue and return plugin instance

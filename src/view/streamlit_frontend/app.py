@@ -10,7 +10,7 @@ import os
 import asyncio
 import streamlit as st
 from src.configuration import configuration as cfg
-from src.view.chat_template import css, bot_template, user_template
+from src.view.streamlit_frontend.chat_template import css, bot_template, user_template
 from langchain.docstore.document import Document
 import json
 import requests
@@ -56,7 +56,7 @@ def run_app() -> None:
         resp = handle_request("post", "/load_llm", {
             "model_path": os.path.join(cfg.PATHS.TEXTGENERATION_MODEL_PATH,
                                        "TheBloke_orca_mini_7B-GGML/orca-mini-7b.ggmlv3.q4_1.bin"),
-            "model_type": "llm"
+            "model_type": "llamacpp"
         })
         print(resp)
         resp = handle_request("post", "/load_kb")
@@ -85,10 +85,13 @@ def run_app() -> None:
             with st.spinner("Processing"):
                 for doc_type in files:
                     if files[doc_type]:
-                        resp = handle_request("post", "/embed", data={"documents":
-                                                                      [{"page_content": f.read().decode("utf-8"), "metadata": {"file_name": f.name,
-                                                                                                                               "file_size": f.size, "file_type": f.type}} for f in files[doc_type]]
-                                                                      })
+                        data = {"documents": [
+                                {"page_content": f.read().decode("utf-8"),
+                                 "metadata": {"file_name": f.name, "file_size": f.size, "file_type": f.type},
+                                 "collection": doc_type
+                                 }
+                                for f in files[doc_type]]}
+                        resp = handle_request("post", "/embed", data=data)
                         print(resp)
                         files[doc_type].clear()
 
