@@ -6,8 +6,10 @@
 ****************************************************
 """
 import os
+from src.control.flask_frontend_controller import FlaskFrontendController
 from src.configuration import configuration as cfg
-from src.view import app
+
 
 if __name__ == "__main__":
-    app.run_app()
+    aura_app_controller = FlaskFrontendController(cfg.FLASK_CONFIG)
+    aura_app_controller.run_app()
