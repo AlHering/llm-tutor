@@ -40,3 +40,4 @@ pyttsx4==3.0.15
 streamlit==1.25.0
 fastapi==0.99.1
 uvicorn==0.23.1
+flask==2.3.2
