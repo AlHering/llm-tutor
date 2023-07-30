@@ -1,0 +1,9 @@
+{% extends "navigated_base.html" %}
+{% block content %}
+
+<div class="streamlit">
+    <iframe src="http://localhost:{{ streamlit_port }}/" width={{ integration_width }} height={{ integration_height
+        }}></iframe>
+</div>
+
+{% endblock content %}
