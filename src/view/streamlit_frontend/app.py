@@ -7,6 +7,7 @@
 ****************************************************
 """
 import os
+from typing import Any
 import streamlit as st
 from src.configuration import configuration as cfg
 from src.view.streamlit_frontend.chat_template import css, bot_template, user_template
@@ -17,15 +18,33 @@ import requests
 BACKEND_BASE_URL = f"http://{cfg.BACKEND_HOST}:{cfg.BACKEND_PORT}"
 
 
-def handle_user_query(query):
+def handle_user_question(question: str) -> str:
     """
-    Function for handling user query.
-    :param query: User query.
+    Function for handling user question.
+    :param query: User question.
+    :return: Answer.
     """
     pass
 
 
-def handle_request(method: str, endpoint: str, data: dict = None):
+def handle_user_conversation(conversation_uuid: str, question: str) -> dict:
+    """
+    Function for handling user conversation.
+    :param conversation_uuid: Conversation UUID.
+    :param question: User question.
+    :return: Conversation result.
+    """
+    pass
+
+
+def handle_request(method: str, endpoint: str, data: dict = None) -> Any:
+    """
+    Function for handling requests.
+    :param method: Request method ("get", "post").
+    :param endpoint: Endpoint to send request to.
+    :param data: JSON data to include in request. Defaults to None.
+    :return: Extracted response content.
+    """
     print(f"{method} :: {endpoint} :: {data}")
     try:
         response = {"get": requests.get, "post": requests.post}[
