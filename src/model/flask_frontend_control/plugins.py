@@ -18,14 +18,16 @@ class BlueprintPlugin(GenericPlugin):
     BlueprintPlugin class, handling more complex tasks.
     """
 
-    def __init__(self, info: dict, path: str) -> None:
+    def __init__(self, info: dict, path: str, security_hash: str = None) -> None:
         """
         Representation of a BlueprintPlugin plugin, adding Blueprint pages to Flask websites.
         For more information on Blueprints, visit https://flask.palletsprojects.com/en/2.2.x/blueprints/.
         :param info: Plugin info.
         :param path: Path to plugin.
+        :param security_hash: Hash that can be used for authentication purposes.
+            Defaults to None.
         """
-        super().__init__(info, path)
+        super().__init__(info, path, security_hash)
         if "./" in self.info["blueprints"]:
             self.info["blueprints"] = os.path.normpath(
                 os.path.join(path, self.info["blueprints"]))

@@ -111,6 +111,22 @@ class FlaskFrontendController(object):
             self.integrate_extension(self.plugin_controller.plugins["blueprints"][blueprint_plugin].get_blueprints(global_config=self.config),
                                      self.plugin_controller.plugins["blueprints"][blueprint_plugin].get_menu())
 
+    def integrate_extension(self, blueprints: List[Blueprint], menus: dict = {}) -> None:
+        """
+        Method for integrating extensions.
+        :param blueprints: Flask Blueprints.
+        :param menus: New menu entries.
+            Defaults to empty dictionary in which case no menu entries are added.
+        """
+        for blueprint in blueprints:
+            self._logger.info(f"Registering Blueprint '{blueprint}'")
+            self.app.register_blueprint(blueprint)
+        for topic in menus:
+            if topic in self.config["menus"]:
+                self.config["menus"][topic].update(menus[topic])
+            else:
+                self.config["menus"][topic] = menus[topic]
+
     def check_config(self) -> bool:
         """
         Method for checking configuration on validity.
