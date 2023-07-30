@@ -10,7 +10,7 @@ import os
 import asyncio
 import streamlit as st
 from src.configuration import configuration as cfg
-from src.view.chat_template import css, bot_template, user_template
+from src.view.streamlit_frontend.chat_template import css, bot_template, user_template
 from langchain.docstore.document import Document
 import json
 import requests
