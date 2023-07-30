@@ -6,7 +6,7 @@
 ****************************************************
 """
 global_config = {
-    "page_title": "Aura Cognitive Architecture",
+    "page_title": "LLM Tutor",
     "page_icon_path": "img/icons/favicon.ico"
 }
 endpoint_config = {
