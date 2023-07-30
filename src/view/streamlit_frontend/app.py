@@ -16,7 +16,7 @@ import json
 import requests
 
 
-BACKEND_BASE_URL = "http://127.0.0.1:7861"
+BACKEND_BASE_URL = f"http://1{cfg.BACKEND_HOST}:{cfg.BACKEND_PORT}"
 
 
 def handle_user_query(query):

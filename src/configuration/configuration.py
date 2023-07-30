@@ -27,6 +27,13 @@ LOGGER = logging.Logger("LLMTutor")
 
 
 """
+BACKENDS
+"""
+BACKEND_HOST = ENV.get("BACKEND_HOST", "127.0.0.1")
+BACKEND_PORT = ENV.get("BACKEND_PORT"), "7861"
+
+
+"""
 FRONTENDS
 """
 FLASK_CONFIG = flask_frontend_config.global_config
