@@ -11,6 +11,7 @@ from dotenv import dotenv_values
 from . import paths as PATHS
 from . import urls as URLS
 from . import flask_frontend_config
+from . import streamlit_frontend_config
 
 
 """
@@ -33,3 +34,6 @@ PATHS.FLASK_COMMON_STATIC = os.path.join(
     PATHS.SOURCE_PATH, "view", "flask_frontend", "common_static")
 PATHS.FLASK_COMMON_TEMPLATES = os.path.join(
     PATHS.SOURCE_PATH, "view", "flask_frontend", "common_templates")
+STREAMLIT_CONFIG = streamlit_frontend_config.CONFIG
+
+FLASK_CONFIG["streamlit_port"] = str(STREAMLIT_CONFIG["server"]["port"])

@@ -16,6 +16,11 @@ endpoint_config = {
         "models": "",
     }
 }
+integration_config = {
+    "integration_width": "1400",
+    "integration_height": "1000",
+    "streamlit_port": "8501"
+}
 # Note that icons are xlink or font-awesome references
 menu_config = {
     "menus": {
@@ -121,5 +126,5 @@ menu_config = {
     }
 }
 
-for dictionary in [endpoint_config, menu_config]:
+for dictionary in [endpoint_config, menu_config, integration_config]:
     global_config.update(dictionary)
