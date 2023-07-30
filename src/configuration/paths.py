@@ -33,3 +33,19 @@ E5_LARGE_V3_PATH = os.path.join(
     EMBEDDING_MODEL_PATH, "intfloat_e5-large-v2")
 INSTRUCT_XL_PATH = os.path.join(
     EMBEDDING_MODEL_PATH, "hkunlp_instructor-xl")
+
+"""
+Backends
+"""
+BACKEND_PATH = os.path.join(DATA_PATH, "backend")
+KB_PATH = os.path.join(BACKEND_PATH, "kb")
+CONFIG_PATH = os.path.join(BACKEND_PATH, "config")
+
+
+"""
+Frontends
+"""
+FLASK_COMMON_STATIC = os.path.join(
+    SOURCE_PATH, "view", "flask_frontend", "common_static")
+FLASK_COMMON_TEMPLATES = os.path.join(
+    SOURCE_PATH, "view", "flask_frontend", "common_templates")
