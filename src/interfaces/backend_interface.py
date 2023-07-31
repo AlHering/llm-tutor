@@ -64,6 +64,7 @@ class Endpoints(str, Enum):
     GET_ROOT = "/"
     POST_START = "/start"
     GET_CONFIGS = "/configs"
+    POST_SAVE_CONFIG = "/save_config"
     POST_LOAD_CONFIG = "/load_config"
     POST_LOAD_LLM = "/load_llm"
     POST_LOAD_KB = "/load_kb"
@@ -118,11 +119,27 @@ def get_configs() -> dict:
         return {"message": "System is stopped!"}
 
 
+@BACKEND.post(Endpoints.POST_SAVE_CONFIG)
+def post_save_config(config_name: str) -> dict:
+    """
+    Endpoint for saving config.
+    :param config_name: Name to save config under.
+    :return: Response.
+    """
+    global STARTED
+    global CONTROLLER
+    if STARTED == True:
+        CONTROLLER.save_config(config_name)
+        return {"message": f"Config '{config_name}' saved."}
+    else:
+        return {"message": "System is stopped!"}
+
+
 @BACKEND.post(Endpoints.POST_LOAD_CONFIG)
 def post_load_config(config_name: str) -> dict:
     """
     Endpoint for loading config.
-    :param config_name: Name of to load.
+    :param config_name: Name of config to load.
     :return: Response.
     """
     global STARTED
