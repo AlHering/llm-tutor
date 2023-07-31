@@ -33,21 +33,17 @@ def run_page() -> None:
 
     options = handle_request(
         "get", BACKEND_ENDPOINTS.GET_CONFIGS).get("configs", [])
-    options.insert(0, "<< NEW >>")
     option = st.selectbox(
-        'Choose a previously created Tutor:',
+        'Choose a Tutor:',
         options)
     if st.button("Load ..."):
-        if option == "<< NEW >>":
-            config_name = st.text_area("Choose Tutor name", f"{uuid4()}")
-            if config_name in options:
-                st.warning(f"'{config_name}' already existing!")
-            else:
-                if st.button("Create ..."):
-                    st.session_state["tutor_config_name"] = config_name
-        else:
-            handle_request("post", BACKEND_ENDPOINTS.POST_LOAD_CONFIG, {
-                "config_name": option})
+        resp = handle_request(
+            "post", BACKEND_ENDPOINTS.POST_LOAD_CONFIG,  {"config_name": option}, as_params=True)
+        st.session_state["tutor_config_name"] = option
+    new_option = st.text_input("Or create a new one:", f"{uuid4()}")
+    if st.button("Create ..."):
+        handle_request("post", BACKEND_ENDPOINTS.POST_SAVE_CONFIG, {
+                       "config_name": new_option}, as_params=True)
 
 
 PAGES = {
@@ -65,10 +61,23 @@ def run_app() -> None:
         page_title="LLM Tutor",
         page_icon=":books:"
     )
+
+    st.session_state["tutor_config_name"] = None
+    st.session_state["kb_config_name"] = None
+    st.session_state["llm_config_name"] = None
+
+    start_controller_if_stopped()
+
     page = st.sidebar.selectbox(
         "Navigation",
         PAGES.keys()
     )
+    if st.session_state["tutor_config_name"] is not None:
+        with st.sidebar.expander(
+            f"Profile: {st.session_state['tutor_config_name']}"
+        ):
+            st.write(st.session_state["kb_config_name"])
+
     PAGES[page]()
 
 
