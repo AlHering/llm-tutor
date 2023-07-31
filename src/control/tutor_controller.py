@@ -65,7 +65,7 @@ class TutorController(object):
         Method for retrieving a list of available configs.
         :return: List of config names.
         """
-        return [file.replace(".json", "") for file in file_system_utility.get_all_files(cfg.PATHS.CONFIG_PATH) if file.endswith(".json")]
+        return [file.replace(".json", "").replace(cfg.PATHS.CONFIG_PATH, "")[1:] for file in file_system_utility.get_all_files(cfg.PATHS.CONFIG_PATH) if file.endswith(".json")]
 
     def load_config(self, config_name: str) -> None:
         """
