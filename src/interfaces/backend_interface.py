@@ -7,6 +7,7 @@
 """
 import uvicorn
 import os
+from enum import Enum
 from typing import Union, List, Optional, Any, Dict
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -56,7 +57,29 @@ BACKEND ENDPOINTS
 """
 
 
-@BACKEND.get("/")
+class Endpoints(str, Enum):
+    """
+    String-based endpoint enum class.
+    """
+    GET_ROOT = "/"
+    POST_START = "/start"
+    GET_CONFIGS = "/configs"
+    POST_LOAD_CONFIG = "/load_config"
+    POST_LOAD_LLM = "/load_llm"
+    POST_LOAD_KB = "/load_kb"
+    POST_EMBED = "/embed"
+    POST_START_CONVERSATION = "/start_conversation"
+    POST_CONVERSATION_QUERY = "/conversation_query"
+    POST_QUERY = "/query"
+
+    def __str__(self) -> str:
+        """
+        Getter method for a string representation.
+        """
+        return self.value
+
+
+@BACKEND.get(Endpoints.GET_ROOT)
 def get_status() -> dict:
     """
     Root endpoint for getting system status.
@@ -67,7 +90,7 @@ def get_status() -> dict:
     return {"message": f"System is {'started' if STARTED else 'stopped'}"}
 
 
-@BACKEND.post("/start")
+@BACKEND.post(Endpoints.POST_START)
 def post_start() -> dict:
     """
     Endpoint for starting system.
@@ -81,7 +104,7 @@ def post_start() -> dict:
     return {"message": f"System is {'started' if STARTED else 'stopped'}"}
 
 
-@BACKEND.get("/configs")
+@BACKEND.get(Endpoints.GET_CONFIGS)
 def get_configs() -> dict:
     """
     Endpoint retrieving available configs.
@@ -95,7 +118,7 @@ def get_configs() -> dict:
         return {"message": "System is stopped!"}
 
 
-@BACKEND.post("/load_config")
+@BACKEND.post(Endpoints.POST_LOAD_CONFIG)
 def post_load_config(config_name: str) -> dict:
     """
     Endpoint for loading config.
@@ -111,7 +134,7 @@ def post_load_config(config_name: str) -> dict:
         return {"message": "System is stopped!"}
 
 
-@BACKEND.post("/load_llm")
+@BACKEND.post(Endpoints.POST_LOAD_LLM)
 def post_load_llm(llm_description: LLMDescription) -> dict:
     """
     Endpoint for loading models.
@@ -127,7 +150,7 @@ def post_load_llm(llm_description: LLMDescription) -> dict:
         return {"message": "System is stopped!"}
 
 
-@BACKEND.post("/load_kb")
+@BACKEND.post(Endpoints.POST_LOAD_KB)
 def post_load_kb() -> dict:
     """
     Endpoint for loading a knowledge base.
@@ -143,7 +166,7 @@ def post_load_kb() -> dict:
         return {"message": "System is stopped!"}
 
 
-@BACKEND.post("/embed")
+@BACKEND.post(Endpoints.POST_EMBED)
 def post_embed(docs: DocumentList, collection: str = None) -> dict:
     """
     Endpoint for embedding a list of documents.
@@ -163,7 +186,7 @@ def post_embed(docs: DocumentList, collection: str = None) -> dict:
         return {"message": "System is stopped!"}
 
 
-@BACKEND.post("/start_conversation")
+@BACKEND.post(Endpoints.POST_START_CONVERSATION)
 def post_start_conversation(conversation_uuid: str = None, collection: str = None) -> dict:
     """
     Endpoint for starting conversation.
@@ -182,7 +205,7 @@ def post_start_conversation(conversation_uuid: str = None, collection: str = Non
         return {"message": "System is stopped!"}
 
 
-@BACKEND.post("/conversation_query")
+@BACKEND.post(Endpoints.POST_CONVERSATION_QUERY)
 def post_conversation_query(query: str, conversation_uuid: str = None) -> dict:
     """
     Endpoint for sending query into conversation.
@@ -201,7 +224,7 @@ def post_conversation_query(query: str, conversation_uuid: str = None) -> dict:
         return {"message": "System is stopped!"}
 
 
-@BACKEND.post("/query")
+@BACKEND.post(Endpoints.POST_QUERY)
 def post_query(query: str, collection: str = None, include_source: bool = True) -> dict:
     """
     Endpoint for querying knowledgebase.
