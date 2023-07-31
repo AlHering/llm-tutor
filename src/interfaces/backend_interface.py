@@ -7,7 +7,7 @@
 """
 import uvicorn
 import os
-from typing import Union, List, Optional, Any
+from typing import Union, List, Optional, Any, Dict
 from fastapi import FastAPI
 from pydantic import BaseModel
 from uuid import uuid4
@@ -57,9 +57,9 @@ BACKEND ENDPOINTS
 
 
 @BACKEND.get("/")
-def get_home() -> dict:
+def get_status() -> dict:
     """
-    Home endpoint for getting system status.
+    Root endpoint for getting system status.
     :return: Response.
     """
     global STARTED
@@ -81,6 +81,36 @@ def post_start() -> dict:
     return {"message": f"System is {'started' if STARTED else 'stopped'}"}
 
 
+@BACKEND.get("/configs")
+def get_configs() -> dict:
+    """
+    Endpoint retrieving available configs.
+    :return: Response.
+    """
+    global STARTED
+    global CONTROLLER
+    if STARTED == True:
+        return {"configs": CONTROLLER.get_available_configs()}
+    else:
+        return {"message": "System is stopped!"}
+
+
+@BACKEND.post("/load_config")
+def post_load_config(config_name: str) -> dict:
+    """
+    Endpoint for loading config.
+    :param config_name: Name of to load.
+    :return: Response.
+    """
+    global STARTED
+    global CONTROLLER
+    if STARTED == True:
+        CONTROLLER.load_config(config_name)
+        return {"message": f"Config '{config_name}' loaded."}
+    else:
+        return {"message": "System is stopped!"}
+
+
 @BACKEND.post("/load_llm")
 def post_load_llm(llm_description: LLMDescription) -> dict:
     """
@@ -92,9 +122,9 @@ def post_load_llm(llm_description: LLMDescription) -> dict:
     global CONTROLLER
     if STARTED == True:
         CONTROLLER.load_general_llm(**llm_description.dict())
-        return {"message": f"LLM loaded."}
+        return {"message": "LLM loaded."}
     else:
-        return {"message": f"System is stopped!"}
+        return {"message": "System is stopped!"}
 
 
 @BACKEND.post("/load_kb")
@@ -108,9 +138,9 @@ def post_load_kb() -> dict:
     if STARTED == True:
         CONTROLLER.load_knowledge_base(os.path.join(
             cfg.PATHS.DATA_PATH, "backend", "kb"))
-        return {"message": f"Knowledgebase loaded."}
+        return {"message": "Knowledgebase loaded."}
     else:
-        return {"message": f"System is stopped!"}
+        return {"message": "System is stopped!"}
 
 
 @BACKEND.post("/embed")
@@ -126,11 +156,11 @@ def post_embed(docs: DocumentList, collection: str = None) -> dict:
     if STARTED == True:
         if CONTROLLER.kb is not None:
             CONTROLLER.load_documents(docs.documents, collection)
-            return {"message": f"Documents loaded."}
+            return {"message": "Documents loaded."}
         else:
-            return {"message": f"No knowledgebase loaded!"}
+            return {"message": "No knowledgebase loaded!"}
     else:
-        return {"message": f"System is stopped!"}
+        return {"message": "System is stopped!"}
 
 
 @BACKEND.post("/start_conversation")
@@ -147,9 +177,9 @@ def post_start_conversation(conversation_uuid: str = None, collection: str = Non
         if CONTROLLER.kb is not None:
             return {"conversation": CONTROLLER.start_conversation(conversation_uuid, collection)}
         else:
-            return {"message": f"No knowledgebase loaded!"}
+            return {"message": "No knowledgebase loaded!"}
     else:
-        return {"message": f"System is stopped!"}
+        return {"message": "System is stopped!"}
 
 
 @BACKEND.post("/conversation_query")
@@ -166,9 +196,9 @@ def post_conversation_query(query: str, conversation_uuid: str = None) -> dict:
         if CONTROLLER.kb is not None:
             return {"result": CONTROLLER.conversational_query(conversation_uuid, query)}
         else:
-            return {"message": f"No knowledgebase loaded!"}
+            return {"message": "No knowledgebase loaded!"}
     else:
-        return {"message": f"System is stopped!"}
+        return {"message": "System is stopped!"}
 
 
 @BACKEND.post("/query")
@@ -186,9 +216,9 @@ def post_query(query: str, collection: str = None, include_source: bool = True) 
         if CONTROLLER.kb is not None:
             return {"result": CONTROLLER.query(query, collection, include_source)}
         else:
-            return {"message": f"No knowledgebase loaded!"}
+            return {"message": "No knowledgebase loaded!"}
     else:
-        return {"message": f"System is stopped!"}
+        return {"message": "System is stopped!"}
 
 
 """
