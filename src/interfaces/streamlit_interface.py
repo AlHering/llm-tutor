@@ -45,21 +45,28 @@ def handle_user_conversation(conversation_uuid: str, question: str) -> dict:
     pass
 
 
-def handle_request(method: str, endpoint: str, data: dict = None) -> Any:
+def handle_request(method: str, endpoint: str, data: Any = None, as_params: bool = False) -> Any:
     """
     Function for handling requests.
     :param method: Request method ("get", "post").
     :param endpoint: Endpoint to send request to.
-    :param data: JSON data to include in request. Defaults to None.
+    :param data: JSON data as dictionary to include in request or query data. Defaults to None.
+    :param as_params: Construct params from data.
     :return: Extracted response content.
     """
     try:
+        kwargs = {"url": f"{BACKEND_BASE_URL}{endpoint}",
+                  "headers": {"ContentType": "application/json"}}
+        if as_params:
+            kwargs["params"] = data
+        else:
+            kwargs["json"] = data
         response = {"get": requests.get, "post": requests.post}[
-            method](f"{BACKEND_BASE_URL}{endpoint}", json=data)
+            method](**kwargs)
 
     except requests.exceptions.SSLError:
         response = {"get": requests.get, "post": requests.post}[
-            method](f"{BACKEND_BASE_URL}{endpoint}", json=data, verify=False)
+            method](**kwargs, verify=False)
     try:
         res = json.loads(response.content.decode('utf-8'))
     except json.decoder.JSONDecodeError:
