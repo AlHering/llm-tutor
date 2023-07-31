@@ -49,13 +49,13 @@ class TutorController(object):
                     use_uuid=conversation, document_type=config["conversations"][conversation]["document_type"])
         self.temporary_config = copy.deepcopy(self.config)
 
-    def save_config(self, save_name: str) -> None:
+    def save_config(self, config_name: str) -> None:
         """
         Method for saving config.
-        :param save_name: Name to save config under.
+        :param config_name: Name to save config under.
         """
         self.config = copy.deepcopy(self.temporary_config)
-        path = os.path.join(cfg.PATHS.CONFIG_PATH, f"{save_name}.json")
+        path = os.path.join(cfg.PATHS.CONFIG_PATH, f"{config_name}.json")
         if os.path.exists(path):
             os.remove(path)
         json_utility.save(self.config, path)
@@ -67,12 +67,12 @@ class TutorController(object):
         """
         return [file.replace(".json", "") for file in file_system_utility.get_all_files(cfg.PATHS.CONFIG_PATH) if file.endswith(".json")]
 
-    def load_config(self, save_name: str) -> None:
+    def load_config(self, config_name: str) -> None:
         """
         Method for loading config.
-        :param save_name: Name of config to load.
+        :param config_name: Name of config to load.
         """
-        path = os.path.join(cfg.PATHS.CONFIG_PATH, f"{save_name}.json")
+        path = os.path.join(cfg.PATHS.CONFIG_PATH, f"{config_name}.json")
         config = json_utility.load(path)
         self.__init__(config)
 
