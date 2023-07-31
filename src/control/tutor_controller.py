@@ -17,6 +17,7 @@ from uuid import uuid4
 from src.configuration import configuration as cfg
 from src.control.chroma_knowledgebase_controller import ChromaKnowledgeBase, EmbeddingFunction, Embeddings, Document
 from src.utility.bronze import json_utility
+from src.utility.silver import file_system_utility
 
 
 class TutorController(object):
@@ -58,6 +59,13 @@ class TutorController(object):
         if os.path.exists(path):
             os.remove(path)
         json_utility.save(self.config, path)
+
+    def get_available_configs(self) -> List[str]:
+        """
+        Method for retrieving a list of available configs.
+        :return: List of config names.
+        """
+        return [file.replace(".json", "") for file in file_system_utility.get_all_files(cfg.PATHS.CONFIG_PATH) if file.endswith(".json")]
 
     def load_config(self, save_name: str) -> None:
         """
