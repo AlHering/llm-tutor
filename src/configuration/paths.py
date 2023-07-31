@@ -39,7 +39,7 @@ Backends
 """
 BACKEND_PATH = os.path.join(DATA_PATH, "backend")
 KB_PATH = os.path.join(BACKEND_PATH, "kb")
-CONFIG_PATH = os.path.join(BACKEND_PATH, "config")
+CONFIG_PATH = os.path.join(BACKEND_PATH, "configs")
 
 
 """
