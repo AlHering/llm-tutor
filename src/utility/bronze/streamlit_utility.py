@@ -7,7 +7,7 @@
 """
 from typing import Any
 from time import sleep
-import datetime
+from datetime import datetime as dt
 
 
 def wait_for_state_variable(streamlit_context: Any, variable_name: str, waiting_message: str, timeout: float = -1.0) -> None:
@@ -21,9 +21,9 @@ def wait_for_state_variable(streamlit_context: Any, variable_name: str, waiting_
     :raises: TimeoutError if timeout is larger than -1 and is exceeded.
     """
     with streamlit_context.spinner(waiting_message):
-        start = datetime.datetime().now()
+        start = dt.now()
         while variable_name not in streamlit_context.session_state:
             sleep(0.1)
-            if timeout >= 0 and datetime.datetime().now() - start >= timeout:
+            if timeout >= 0 and dt.now() - start >= timeout:
                 raise TimeoutError(
                     f"Timeout while waiting for '{variable_name}' to be available under Streamlit context.")
