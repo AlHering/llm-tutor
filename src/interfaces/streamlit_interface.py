@@ -8,10 +8,12 @@
 import json
 import requests
 from typing import Any
+from src.interfaces.backend_interface import Endpoints
 from src.configuration import configuration as cfg
 
 
 BACKEND_BASE_URL = f"http://{cfg.BACKEND_HOST}:{cfg.BACKEND_PORT}"
+BACKEND_ENDPOINTS = Endpoints
 
 
 def start_controller_if_stopped() -> None:
