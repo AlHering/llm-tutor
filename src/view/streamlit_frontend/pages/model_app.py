@@ -18,14 +18,14 @@ import json
 import requests
 
 
-st.set_page_config(
-    page_title="LLM Tutor",
-    page_icon=":books:"
-)
-st.title("Models")
-st.write(css, unsafe_allow_html=True)
+def run_page() -> None:
+    """
+    Function for running page.
+    """
+    st.title("Models")
+    st.write(css, unsafe_allow_html=True)
 
-st.header("Model Control")
+    st.header("Model Control")
 
-streamlit_utility.wait_for_state_variable(
-    streamlit_context=st, variable_name="backend_controller_started", waiting_message="Waiting for controller setup...")
+    streamlit_utility.wait_for_state_variable(
+        streamlit_context=st, variable_name="backend_controller_started", waiting_message="Waiting for controller setup...")
