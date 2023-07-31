@@ -30,7 +30,7 @@ LOGGER = logging.Logger("LLMTutor")
 Backends
 """
 BACKEND_HOST = ENV.get("BACKEND_HOST", "127.0.0.1")
-BACKEND_PORT = ENV.get("BACKEND_PORT"), "7861"
+BACKEND_PORT = ENV.get("BACKEND_PORT", "7861")
 
 
 """
