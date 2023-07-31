@@ -7,6 +7,7 @@
 ****************************************************
 """
 import os
+from time import sleep
 from typing import Any
 from uuid import uuid4
 import streamlit as st
@@ -17,6 +18,14 @@ from src.interfaces. streamlit_interface import start_controller_if_stopped, han
 import json
 import requests
 from src.view.streamlit_frontend.pages import knowledgebase_app, model_app
+
+
+def choose_config() -> None:
+    """
+    Callback function for choosing config.
+    """
+    handle_request(
+        "post", BACKEND_ENDPOINTS.POST_LOAD_CONFIG,  {"config_name": st.session_state["tutor_config_name"]}, as_params=True)
 
 
 def run_page() -> None:
@@ -31,19 +40,18 @@ def run_page() -> None:
         start_controller_if_stopped()
         st.session_state["backend_controller_started"] = True
 
-    options = handle_request(
-        "get", BACKEND_ENDPOINTS.GET_CONFIGS).get("configs", [])
-    option = st.selectbox(
-        'Choose a Tutor:',
-        options)
-    if st.button("Load ..."):
-        resp = handle_request(
-            "post", BACKEND_ENDPOINTS.POST_LOAD_CONFIG,  {"config_name": option}, as_params=True)
-        st.session_state["tutor_config_name"] = option
-    new_option = st.text_input("Or create a new one:", f"{uuid4()}")
-    if st.button("Create ..."):
+    new_option = st.text_input(
+        "Create a new Tutor:", placeholder="Tutor Name")
+    if new_option:
         handle_request("post", BACKEND_ENDPOINTS.POST_SAVE_CONFIG, {
-                       "config_name": new_option}, as_params=True)
+            "config_name": new_option}, as_params=True)
+        st.session_state["tutor_config_options"].insert(0, new_option)
+        st.session_state["tutor_config_name"] = new_option
+        choose_config()
+
+    st.session_state["tutor_config_name"] = st.selectbox(
+        'Choose a Tutor:',
+        st.session_state["tutor_config_options"], on_change=choose_config)
 
 
 PAGES = {
@@ -62,11 +70,12 @@ def run_app() -> None:
         page_icon=":books:"
     )
 
+    start_controller_if_stopped()
     st.session_state["tutor_config_name"] = None
     st.session_state["kb_config_name"] = None
     st.session_state["llm_config_name"] = None
-
-    start_controller_if_stopped()
+    st.session_state["tutor_config_options"] = handle_request(
+        "get", BACKEND_ENDPOINTS.GET_CONFIGS).get("configs", [])
 
     page = st.sidebar.selectbox(
         "Navigation",
