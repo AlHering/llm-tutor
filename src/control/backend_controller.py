@@ -27,6 +27,16 @@ class LLMPool(object):
         self.threads = {}
         self.llms = {}
 
+    def validate_resources(self, llm_configuration: dict, queue: bool = False) -> bool:
+        """
+        Method for validating resources before LLM instantiation.
+        :param llm_configuration: LLM configuration.
+        :param queue: Queue up instanciation until resources are available.
+            Defaults to False.
+        :return: True, if resources are available, else False.
+        """
+        pass
+
     def run_llm(main_switch: Event, current_switch: Event, llm_configuraito: dict, input_queue: Queue, output_queue: Queue) -> None:
         """
         Function for running LLM instance.
