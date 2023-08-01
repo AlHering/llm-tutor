@@ -7,8 +7,11 @@
 """
 import os
 from uuid import uuid4
+from queue import Queue
+from threading import Thread, Event
 from typing import Optional, Any, List
 from src.configuration import configuration as cfg
+from src.utility.silver.language_model_utility import spawn_language_model_instance
 from src.model.backend_control.dataclasses import create_or_load_database
 
 
@@ -21,7 +24,21 @@ class LLMPool(object):
         """
         Initiation method.
         """
-        pass
+        self.threads = {}
+        self.llms = {}
+
+    def run_llm(main_switch: Event, current_switch: Event, llm_configuraito: dict, input_queue: Queue, output_queue: Queue) -> None:
+        """
+        Function for running LLM instance.
+        :param main_switch: Pool killswitch event.
+        :param current_switch: Sepecific killswitch event.
+        :param llm_configuration: Configuration to instantiate LLM.
+        :param input_queue: Input queue.
+        :param output_queue: Output queue.
+        """
+        llm = spawn_language_model_instance(llm_configuraito)
+        while not main_switch.wait(0.5) or current_switch(0.5):
+            output_queue.put(llm.handle_query(input_queue.get()))
 
 
 class BackendController(object):
