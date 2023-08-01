@@ -37,7 +37,7 @@ class LLMPool(object):
         """
         pass
 
-    def run_llm(main_switch: Event, current_switch: Event, llm_configuraito: dict, input_queue: Queue, output_queue: Queue) -> None:
+    def run_llm(main_switch: Event, current_switch: Event, llm_configuraiton: dict, input_queue: Queue, output_queue: Queue) -> None:
         """
         Function for running LLM instance.
         :param main_switch: Pool killswitch event.
@@ -46,7 +46,7 @@ class LLMPool(object):
         :param input_queue: Input queue.
         :param output_queue: Output queue.
         """
-        llm = spawn_language_model_instance(llm_configuraito)
+        llm = spawn_language_model_instance(llm_configuraiton)
         while not main_switch.wait(0.5) or current_switch(0.5):
             output_queue.put(llm.handle_query(input_queue.get()))
 
