@@ -33,6 +33,7 @@ class Model(BaseModel):
     """
     Dataclass for model representation.
     """
+    model_uuid: str
     model_path: str
     model_type: str
     model_loader: str
@@ -42,8 +43,8 @@ class Collection(BaseModel):
     """
     Dataclass for knowledgebase collection representation.
     """
+    collection_uuid: str
     collection_path: str
-    collection_name: str
     embedding_type: str
     preprocess_split: int
     preprocess_overlap: int
@@ -53,6 +54,7 @@ class KB(BaseModel):
     """
     Dataclass for knowledgebase representation.
     """
+    kb_uuid: str
     kb_path: str
     kb_loader: str
     kb_embedding_type: str
@@ -62,8 +64,9 @@ class Document(BaseModel):
     """
     Dataclass for documents.
     """
-    page_content: str
-    metadata: dict
+    document_uuid: str
+    document_content: str
+    document_metadata: dict
 
 
 class DocumentList(BaseModel):
