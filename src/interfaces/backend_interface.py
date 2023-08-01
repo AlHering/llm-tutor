@@ -29,12 +29,33 @@ DATA CLASSES
 """
 
 
-class LLMDescription(BaseModel):
+class Model(BaseModel):
     """
-    Dataclass for LLM descrions.
+    Dataclass for model representation.
     """
     model_path: str
     model_type: str
+    model_loader: str
+
+
+class Collection(BaseModel):
+    """
+    Dataclass for knowledgebase collection representation.
+    """
+    collection_path: str
+    collection_name: str
+    embedding_type: str
+    preprocess_split: int
+    preprocess_overlap: int
+
+
+class KB(BaseModel):
+    """
+    Dataclass for knowledgebase representation.
+    """
+    kb_path: str
+    kb_loader: str
+    kb_embedding_type: str
 
 
 class Document(BaseModel):
@@ -61,7 +82,7 @@ class Endpoints(str, Enum):
     """
     String-based endpoint enum class.
     """
-    GET_ROOT = "/"
+    GET_STATUS = "/"
     POST_START = "/start"
     GET_CONFIGS = "/configs"
     POST_SAVE_CONFIG = "/save_config"
