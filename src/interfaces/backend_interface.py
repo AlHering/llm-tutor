@@ -202,6 +202,8 @@ async def post_stop() -> dict:
     :return: Response.
     """
     global STATUS
+    global CONTROLLER
+    CONTROLLER.shutdown()
     STATUS = False
     return {"message": f"System stopped!"}
 

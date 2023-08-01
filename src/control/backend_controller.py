@@ -30,3 +30,9 @@ class BackendController(object):
         self.engine = representation["engine"]
         self.model = representation["model"]
         self.session_factory = representation["session_factory"]
+
+    def shutdown(self) -> None:
+        """
+        Method for running shutdown process.
+        """
+        pass
