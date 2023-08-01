@@ -209,6 +209,61 @@ Controller
 """
 
 
+@BACKEND.get(Endpoints.GET_CONTROLLERS)
+@access_validator(status=True)
+async def get_controllers() -> dict:
+    """
+    Endpoint for getting controllers.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.get(Endpoints.GET_CONTROLLER)
+@access_validator(status=True)
+async def get_controller(controller_uuid: str) -> dict:
+    """
+    Endpoint for getting a specific controller.
+    :param controller_uuid: Controller UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_CONTROLLER)
+@access_validator(status=True)
+async def post_controller(controller: Controller) -> dict:
+    """
+    Endpoint for posting a controller.
+    :param controller: Controller.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.patch(Endpoints.PATCH_CONTROLLER)
+@access_validator(status=True)
+async def patch_controller(controller_uuid: str, controller: Controller) -> dict:
+    """
+    Endpoint for patching a controller.
+    :param controller_uuid: Controller UUID.
+    :param controller: Controller.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.delete(Endpoints.DELETE_CONTROLLER)
+@access_validator(status=True)
+async def delete_controller(controller_uuid: str) -> dict:
+    """
+    Endpoint for deleting a controller.
+    :param controller_uuid: Controller UUID.
+    :return: Response.
+    """
+    return {}
+
+
 """
 Backend runner
 """
