@@ -69,31 +69,44 @@ class LLMPool(object):
         # TODO: Implement
         pass
 
-    def load_llm(self, llm_configuration: dict) -> Optional[str]:
+    def prepare_llm(self, llm_configuration: dict) -> str:
         """
-        Method for loading LLM instance.
+        Method for preparing LLM instance.
         :param llm_configuration: LLM configuration.
-        :return: Thread UUID if instantiation was successful.
+        :return: Thread UUID.
         """
-        if self.validate_resources(llm_configuration, self.queue_spawns):
-            uuid = uuid4()
-            self.threads[uuid] = {
-                "switch": Event(),
-                "input": Queue(),
-                "output": Queue(),
-                "config": llm_configuration
-            }
-            self.threads[uuid]["thread"] = Thread(
-                target=run_llm,
-                args=(
-                    self.main_switch,
-                    self.threads[uuid]["switch"],
-                    self.threads[uuid]["config"],
-                    self.threads[uuid]["input"],
-                    self.threads[uuid]["output"],
-                )
+        uuid = uuid4()
+        self.threads[uuid] = {
+            "input": Queue(),
+            "output": Queue(),
+            "config": llm_configuration
+        }
+        return uuid
+
+    def load_llm(self, target_thread: str) -> None:
+        """
+        Method for loading LLM.
+        :param target_thread: Thread to start.
+        """
+        self.threads[target_thread]["switch"] = Event()
+        self.threads[target_thread]["thread"] = Thread(
+            target=run_llm,
+            args=(
+                self.main_switch,
+                self.threads[target_thread]["switch"],
+                self.threads[target_thread]["config"],
+                self.threads[target_thread]["input"],
+                self.threads[target_thread]["output"],
             )
-            return uuid
+        ).start()
+
+    def unload_llm(self, target_thread: str) -> None:
+        """
+        Method for unloading LLM.
+        :param target_thread: Thread to stop.
+        """
+        self.threads[target_thread]["switch"].set()
+        self.threads[target_thread]["thread"].join()
 
 
 class BackendController(object):
