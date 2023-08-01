@@ -6,9 +6,25 @@
 ****************************************************
 """
 from typing import Any
+from abc import ABC, abstractmethod
 
 
-def spawn_language_model_instance(config: str) -> Any:
+class LanguageModel(ABC):
+    """
+    Abstract language model class.
+    """
+
+    @abstractmethod
+    def handle_query(query: str) -> Any:
+        """
+        Main handler method for wrapping language model capabilities.
+        :param query: User query.
+        :return: Response.
+        """
+        pass
+
+
+def spawn_language_model_instance(config: str) -> LanguageModel:
     """
     Function for spawning language model instance based on configuration.
     :param config: Instance configuration.
