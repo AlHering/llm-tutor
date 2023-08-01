@@ -15,6 +15,20 @@ from src.utility.silver.language_model_utility import spawn_language_model_insta
 from src.model.backend_control.dataclasses import create_or_load_database
 
 
+def run_llm(main_switch: Event, current_switch: Event, llm_configuraiton: dict, input_queue: Queue, output_queue: Queue) -> None:
+    """
+    Function for running LLM instance.
+    :param main_switch: Pool killswitch event.
+    :param current_switch: Sepecific killswitch event.
+    :param llm_configuration: Configuration to instantiate LLM.
+    :param input_queue: Input queue.
+    :param output_queue: Output queue.
+    """
+    llm = spawn_language_model_instance(llm_configuraiton)
+    while not main_switch.wait(0.5) or current_switch(0.5):
+        output_queue.put(llm.handle_query(input_queue.get()))
+
+
 class LLMPool(object):
     """
     Controller class for handling LLM instances.
@@ -36,19 +50,6 @@ class LLMPool(object):
         :return: True, if resources are available, else False.
         """
         pass
-
-    def run_llm(main_switch: Event, current_switch: Event, llm_configuraiton: dict, input_queue: Queue, output_queue: Queue) -> None:
-        """
-        Function for running LLM instance.
-        :param main_switch: Pool killswitch event.
-        :param current_switch: Sepecific killswitch event.
-        :param llm_configuration: Configuration to instantiate LLM.
-        :param input_queue: Input queue.
-        :param output_queue: Output queue.
-        """
-        llm = spawn_language_model_instance(llm_configuraiton)
-        while not main_switch.wait(0.5) or current_switch(0.5):
-            output_queue.put(llm.handle_query(input_queue.get()))
 
 
 class BackendController(object):
