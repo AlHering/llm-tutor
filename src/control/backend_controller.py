@@ -45,6 +45,19 @@ class LLMPool(object):
         self.main_switch = Event()
         self.threads = {}
 
+    def kill_all(self) -> None:
+        """
+        Method for killing threads.
+        """
+        self.main_switch.set()
+
+    def kill(self, target_thread: str) -> None:
+        """
+        Method for killing threads.
+        :param target_thread: Thread to kill.
+        """
+        self.threads[target_thread]["switch"].set()
+
     def validate_resources(self, llm_configuration: dict, queue_spawns: bool) -> bool:
         """
         Method for validating resources before LLM instantiation.
