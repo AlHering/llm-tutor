@@ -5,17 +5,10 @@
 *            (c) 2023 Alexander Hering             *
 ****************************************************
 """
-from sqlalchemy import MetaData, Table, Column, String, Boolean, Integer, JSON, Text, DateTime, CHAR, ForeignKey, Table, \
-    Float, BLOB, TEXT, func, inspect, select, text
-from sqlalchemy import and_, or_, not_
+from sqlalchemy import Column, String, JSON, ForeignKey, BLOB
 from sqlalchemy.ext.automap import automap_base, classname_for_table
-from typing import Any, Union, List, Tuple, Optional
-import copy
-import datetime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from src.configuration import configuration as cfg
-from src.utility.bronze import dictionary_utility, sqlalchemy_utility, time_utility
+from src.utility.bronze import sqlalchemy_utility
 
 
 CONTROLLER = {
@@ -44,6 +37,7 @@ MODEL = {
                            comment="Loader for the model.")
 }
 
+
 KNOWLEDGEBASE = {
     "__tablename__": "knowledgebase",
     "__table_args__": {"comment": "Knowledgebase Table."},
@@ -59,6 +53,7 @@ KNOWLEDGEBASE = {
 
 }
 
+
 DOCUMENT = {
     "__tablename__": "document",
     "__table_args__": {"comment": "Document Table."},
@@ -67,6 +62,7 @@ DOCUMENT = {
     "content": Column(BLOB, comment="Content of the document."),
     "meta_data": Column(JSON, comment="Metadata of the document.")
 }
+
 
 CONVERSATION = {
     "__tablename__": "conversation",
@@ -85,4 +81,24 @@ def create_or_load_database(database_uri: str) -> dict:
     Function for creating or loading backend database.
     :param database_uri: Database URI.
     """
-    pass
+    base = automap_base()
+    engine = sqlalchemy_utility.get_engine(database_uri)
+    base.prepare(autoload_with=engine, reflect=True)
+    model = {
+        table: base.classes[classname_for_table(base, table, base.metadata.tables[table])] for table in
+        base.metadata.tables
+    }
+    session_factory = sqlalchemy_utility.get_session_factory(engine)
+
+    for dataclass_content in [CONTROLLER, MODEL, KNOWLEDGEBASE, DOCUMENT, CONVERSATION]:
+        if dataclass_content["__tablename__"] not in model:
+            model[dataclass_content["__tablename__"]] = type(
+                dataclass_content["__tablename__"].title(), (base,), dataclass_content)
+    base.metadata.create_all(bind=engine)
+
+    return {
+        "base": base,
+        "engine": engine,
+        "model": model,
+        "session_factory": session_factory
+    }
