@@ -49,7 +49,7 @@ KNOWLEDGEBASE = {
                      comment="Loader for knowledgebase."),
     "embedding_model_uuid": Column(String, ForeignKey(f"model.uuid"),
                                    comment="Registered embedding model to use."),
-    "documents": relationship("Document", comment="Documents included in the knowledgebase.")
+    "documents": relationship("Document")
 
 }
 
