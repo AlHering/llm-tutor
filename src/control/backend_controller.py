@@ -6,6 +6,7 @@
 ****************************************************
 """
 import os
+from typing import Optional, Any, List
 from src.configuration import configuration as cfg
 from src.model.backend_control.dataclasses import create_or_load_database
 
@@ -36,3 +37,75 @@ class BackendController(object):
         Method for running shutdown process.
         """
         pass
+
+    def get_objects(self, object_type: str) -> List[Any]:
+        """
+        Method for acquiring objects.
+        :param object_type: Target object type.
+        :return: List of objects of given type.
+        """
+        return self.session_factory().query(self.model[object_type]).all()
+
+    def get_object(self, object_type: str, object_uuid: str) -> Optional[Any]:
+        """
+        Method for acquiring objects.
+        :param object_type: Target object type.
+        :param object_uuid: Target UUID.
+        :return: An object of given type and UUID, if found.
+        """
+        return self.session_factory().query(self.model[object_type]).filter(
+            self.model[object_type].uuid == object_uuid
+        ).first()
+
+    def add_object(self, object_type: str, **object_attributes: Optional[Any]) -> Optional[str]:
+        """
+        Method for adding an object.
+        :param object_type: Target object type.
+        :param object_attributes: Object attributes.
+        :return: Object UUID of added object, if adding was successful.
+        """
+        obj = self.model[object_type](**object_attributes)
+        with self.session_factory() as session:
+            session.add(obj)
+            session.commit()
+            session.refresh(obj)
+        return obj.uuid
+
+    def patch_object(self, object_type: str, object_uuid: str, **object_attributes: Optional[Any]) -> Optional[str]:
+        """
+        Method for patching an object.
+        :param object_type: Target object type.
+        :param object_uuid: Target UUID.
+        :param object_attributes: Object attributes.
+        :return: Object UUID of patched object, if patching was successful.
+        """
+        result = None
+        with self.session_factory() as session:
+            obj = session.query(self.model[object_type]).filter(
+                self.model[object_type].uuid == object_uuid
+            ).first()
+            if obj:
+                for attribute in object_attributes:
+                    setattr(obj, attribute, object_attributes[attribute])
+                session.commit()
+                result = obj.uuid
+        return result
+
+    def delete_object(self, object_type: str, object_uuid: str) -> Optional[str]:
+        """
+        Method for deleting an object.
+        :param object_type: Target object type.
+        :param object_uuid: Target UUID.
+        :param object_attributes: Object attributes.
+        :return: Object UUID of patched object, if deletion was successful.
+        """
+        result = None
+        with self.session_factory() as session:
+            obj = session.query(self.model[object_type]).filter(
+                self.model[object_type].uuid == object_uuid
+            ).first()
+            if obj:
+                obj.delete()
+                session.commit()
+                result = obj.uuid
+        return result
