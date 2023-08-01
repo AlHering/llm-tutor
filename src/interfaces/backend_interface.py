@@ -200,7 +200,7 @@ async def post_stop() -> dict:
     :return: Response.
     """
     global STATUS
-    STARTED = False
+    STATUS = False
     return {"message": f"System stopped!"}
 
 
