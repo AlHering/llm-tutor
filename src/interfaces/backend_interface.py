@@ -12,20 +12,51 @@ from typing import Union, List, Optional, Any, Dict
 from fastapi import FastAPI
 from pydantic import BaseModel
 from uuid import uuid4
+from functools import wraps
 from src.configuration import configuration as cfg
 from src.control.tutor_controller import TutorController
 
 """
-BACKEND CONTROL
+Backend control
 """
 BACKEND = FastAPI(title="LLMTutor Backend", version="0.1",
                   description="LLM-powered backend for document embedding an querying.")
-STARTED = False
+STATUS = False
 CONTROLLER: TutorController = None
 
 
+def access_validator(status: bool) -> Optional[Any]:
+    """
+    Validation decorator.
+    :param func: Decorated function.
+    :param status: Status to check.
+    :return: Error message if status is incorrect, else function return.
+    """
+    global STATUS
+
+    def wrapper(func: Any) -> Optional[Any]:
+        """
+        Function wrapper.
+        :param func: Wrapped function.
+        :return: Error message if status is incorrect, else function return.
+        """
+        @wraps(func)
+        async def inner(*args: Optional[Any], **kwargs: Optional[Any]):
+            """
+            Inner function wrapper.
+            :param args: Arguments.
+            :param kwargs: Keyword arguments.
+            """
+            if status != STATUS:
+                return {"message": f"System is {' already started' if STATUS else 'currently stopped'}"}
+            else:
+                return await func(*args, **kwargs)
+        return inner
+    return wrapper
+
+
 """
-DATA CLASSES
+Dataclasses
 """
 
 
@@ -89,31 +120,37 @@ class Endpoints(str, Enum):
     BASE = "/api/v1"
     GET_STATUS = f"{BASE}/status/"
     POST_START = f"{BASE}/start/"
+    POST_STOP = f"{BASE}/stop/"
 
-    GET_CONTROLLER = f"{BASE}/controllers/"
-    POST_CONTROLLER = f"{BASE}/controllers/"
-    PUT_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}"
-    DELETE_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}"
+    GET_CONTROLLERS = f"{BASE}/controllers/"
+    GET_CONTROLLER = f"{BASE}/controller/{{controller_uuid}}"
+    POST_CONTROLLER = f"{BASE}/controller/"
+    PATCH_CONTROLLER = f"{BASE}/controller/{{controller_uuid}}"
+    DELETE_CONTROLLER = f"{BASE}/controller/{{controller_uuid}}"
 
+    GET_MODELS = f"{BASE}/models/"
     GET_MODEL = f"{BASE}/model/"
     POST_MODEL = f"{BASE}/model/"
-    PUT_MODEL = f"{BASE}/model/{{model_uuid}}"
+    PATCH_MODEL = f"{BASE}/model/{{model_uuid}}"
     DELETE_MODEL = f"{BASE}/model/{{model_uuid}}"
 
-    GET_KB = f"{BASE}/knowledgebases/"
+    GET_KBS = f"{BASE}/knowledgebases/"
+    GET_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
     POST_KB = f"{BASE}/knowledgebase/"
-    PUT_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
+    PATCH_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
     DELETE_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
 
-    GET_DOCUMENT = f"{BASE}/documents/"
-    POST_DOCUMENT = f"{BASE}/documents/"
-    PUT_DOCUMENT = f"{BASE}/documents/{{document_uuid}}"
-    DELETE_DOCUMENT = f"{BASE}/documents/{{document_uuid}}"
+    GET_DOCUMENTS = f"{BASE}/documents/"
+    GET_DOCUMENT = f"{BASE}/document/{{document_uuid}}"
+    POST_DOCUMENT = f"{BASE}/document/"
+    PATCH_DOCUMENT = f"{BASE}/document/{{document_uuid}}"
+    DELETE_DOCUMENT = f"{BASE}/document/{{document_uuid}}"
 
-    GET_CONVERSATION = f"{BASE}/conversations/"
-    POST_CONVERSATION = f"{BASE}/conversations/"
-    PUT_CONVERSATION = f"{BASE}/conversations/{{conversation_uuid}}"
-    DELETE_CONVERSATION = f"{BASE}/conversations/{{conversation_uuid}}"
+    GET_CONVERSATIONS = f"{BASE}/conversations/"
+    GET_CONVERSATION = f"{BASE}/conversation/{{conversation_uuid}}"
+    POST_CONVERSATION = f"{BASE}/conversation/"
+    PATCH_CONVERSATION = f"{BASE}/conversation/{{conversation_uuid}}"
+    DELETE_CONVERSATION = f"{BASE}/conversation/{{conversation_uuid}}"
 
     POST_LOAD_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}/load"
     POST_UNLOAD_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}/unload"
@@ -128,31 +165,52 @@ class Endpoints(str, Enum):
         return self.value
 
 
+"""
+Basic backend interaction
+"""
+
+
 @BACKEND.get(Endpoints.GET_STATUS)
 async def get_status() -> dict:
     """
     Root endpoint for getting system status.
     :return: Response.
     """
-    global STARTED
-    global CONTROLLER
-    return {"message": f"System is {'started' if STARTED else 'stopped'}"}
+    global STATUS
+    return {"message": f"System is {'started' if STATUS else 'stopped'}!"}
 
 
 @BACKEND.post(Endpoints.POST_START)
+@access_validator(status=False)
 async def post_start() -> dict:
     """
     Endpoint for starting system.
     :return: Response.
     """
-    global STARTED
-    if STARTED == False:
-        STARTED = True
-    return {"message": f"System is {'started' if STARTED else 'stopped'}"}
+    global STATUS
+    STATUS = True
+    return {"message": f"System started!"}
+
+
+@BACKEND.post(Endpoints.POST_STOP)
+@access_validator(status=True)
+async def post_stop() -> dict:
+    """
+    Endpoint for stopping system.
+    :return: Response.
+    """
+    global STATUS
+    STARTED = False
+    return {"message": f"System stopped!"}
 
 
 """
-BACKEND RUNNERS
+Controller
+"""
+
+
+"""
+Backend runner
 """
 
 
