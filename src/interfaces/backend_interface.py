@@ -166,7 +166,7 @@ class Endpoints(str, Enum):
 
 
 """
-Basic backend interaction
+Basic backend endpoints
 """
 
 
@@ -209,7 +209,7 @@ async def post_stop() -> dict:
 
 
 """
-Controller interface
+Controller endpoints
 """
 
 
@@ -259,7 +259,7 @@ async def patch_controller(controller_uuid: str, controller: Controller) -> dict
     """
     return {"uuid": CONTROLLER.patch_object("controller",
                                             controller_uuid,
-                                            controller.json())}
+                                            controller.dict())}
 
 
 @BACKEND.delete(Endpoints.DELETE_CONTROLLER)
@@ -309,7 +309,7 @@ async def post_direct_query(controller_uuid: str, query: str) -> dict:
 
 
 """
-Models interface
+Models endpoints
 """
 
 
@@ -320,7 +320,8 @@ async def get_models() -> dict:
     Endpoint for getting models.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"models": CONTROLLER.get_objects("model")}
 
 
 @BACKEND.get(Endpoints.GET_MODEL)
@@ -331,7 +332,8 @@ async def get_model(model_uuid: str) -> dict:
     :param model_uuid: Model UUID.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"models": CONTROLLER.get_object("model", model_uuid)}
 
 
 @BACKEND.post(Endpoints.POST_MODEL)
@@ -369,7 +371,7 @@ async def delete_model(model_uuid: str) -> dict:
 
 
 """
-Knowledgebases interface
+Knowledgebases endpoints
 """
 
 
@@ -380,7 +382,8 @@ async def get_knowledgebases() -> dict:
     Endpoint for getting knowledgebases.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"knowledgebases": CONTROLLER.get_objects("knowledgebase")}
 
 
 @BACKEND.get(Endpoints.GET_KB)
@@ -391,7 +394,8 @@ async def get_knowledgebase(knowledgebase_uuid: str) -> dict:
     :param knowledgebase_uuid: Knowledgebase UUID.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"knowledgebase": CONTROLLER.get_object("knowledgebase", knowledgebase_uuid)}
 
 
 @BACKEND.post(Endpoints.POST_KB)
@@ -429,7 +433,7 @@ async def delete_knowledgebase(knowledgebase_uuid: str) -> dict:
 
 
 """
-Document interface
+Document endpoints
 """
 
 
@@ -440,7 +444,8 @@ async def get_documents() -> dict:
     Endpoint for getting documents.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"documents": CONTROLLER.get_objects("document")}
 
 
 @BACKEND.get(Endpoints.GET_DOCUMENT)
@@ -451,7 +456,8 @@ async def get_document(document_uuid: str) -> dict:
     :param document_uuid: Document UUID.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"document": CONTROLLER.get_object("document", document_uuid)}
 
 
 @BACKEND.post(Endpoints.POST_DOCUMENT)
@@ -489,7 +495,7 @@ async def delete_document(document_uuid: str) -> dict:
 
 
 """
-Conversation interface
+Conversation endpoints
 """
 
 
@@ -500,7 +506,8 @@ async def get_conversations() -> dict:
     Endpoint for getting conversations.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"conversations": CONTROLLER.get_objects("conversation")}
 
 
 @BACKEND.get(Endpoints.GET_CONVERSATION)
@@ -511,7 +518,8 @@ async def get_conversation(conversation_uuid: str) -> dict:
     :param conversation_uuid: Conversation UUID.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"conversation": CONTROLLER.get_object("conversation", conversation_uuid)}
 
 
 @BACKEND.post(Endpoints.POST_CONVERSATION)
