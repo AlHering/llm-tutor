@@ -244,8 +244,8 @@ async def post_controller(controller: Controller) -> dict:
     :param controller: Controller.
     :return: Response.
     """
-    return {"uuid": CONTROLLER.add_object("controller",
-                                          **controller.dict())}
+    return {"uuid": CONTROLLER.post_object("controller",
+                                           **controller.dict())}
 
 
 @BACKEND.patch(Endpoints.PATCH_CONTROLLER)
@@ -259,7 +259,7 @@ async def patch_controller(controller_uuid: str, controller: Controller) -> dict
     """
     return {"uuid": CONTROLLER.patch_object("controller",
                                             controller_uuid,
-                                            controller.dict())}
+                                            **controller.dict())}
 
 
 @BACKEND.delete(Endpoints.DELETE_CONTROLLER)
@@ -344,7 +344,8 @@ async def post_model(model: Model) -> dict:
     :param model: Model.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.post_object("model",
+                                           **model.dict())}
 
 
 @BACKEND.patch(Endpoints.PATCH_MODEL)
@@ -356,7 +357,9 @@ async def patch_model(model_uuid: str, model: Model) -> dict:
     :param model: Model.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.patch_object("model",
+                                            model_uuid,
+                                            **model.dict())}
 
 
 @BACKEND.delete(Endpoints.DELETE_MODEL)
@@ -406,7 +409,8 @@ async def post_knowledgebase(knowledgebase: Knowledgebase) -> dict:
     :param knowledgebase: Knowledgebase.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.post_object("knowledgebase",
+                                           **knowledgebase.dict())}
 
 
 @BACKEND.patch(Endpoints.PATCH_KB)
@@ -418,7 +422,9 @@ async def patch_knowledgebase(knowledgebase_uuid: str, knowledgebase: Knowledgeb
     :param knowledgebase: Knowledgebase.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.patch_object("knowledgebase",
+                                            knowledgebase_uuid,
+                                            **knowledgebase.dict())}
 
 
 @BACKEND.delete(Endpoints.DELETE_KB)
@@ -468,7 +474,8 @@ async def post_document(document: Document) -> dict:
     :param document: Document.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.post_object("documet",
+                                           **document.dict())}
 
 
 @BACKEND.patch(Endpoints.PATCH_DOCUMENT)
@@ -480,7 +487,9 @@ async def patch_document(document_uuid: str, document: Document) -> dict:
     :param document: Document.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.patch_object("document",
+                                            document_uuid,
+                                            **document.dict())}
 
 
 @BACKEND.delete(Endpoints.DELETE_DOCUMENT)
@@ -530,7 +539,8 @@ async def post_conversation(conversation: Conversation) -> dict:
     :param conversation: Conversation.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.post_object("conversation",
+                                           **conversation.dict())}
 
 
 @BACKEND.patch(Endpoints.PATCH_CONVERSATION)
@@ -542,7 +552,9 @@ async def patch_conversation(conversation_uuid: str, conversation: Conversation)
     :param conversation: Conversation.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.patch_object("conversation",
+                                            conversation_uuid,
+                                            **conversation.dict())}
 
 
 @BACKEND.delete(Endpoints.DELETE_CONVERSATION)
