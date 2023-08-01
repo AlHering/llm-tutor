@@ -64,19 +64,19 @@ class Model(BaseModel):
     """
     Dataclass for model representation.
     """
-    model_uuid: str
-    model_path: str
-    model_type: str
-    model_loader: str
+    uuid: str
+    path: str
+    type: str
+    loader: str
 
 
 class Knowledgebase(BaseModel):
     """
     Dataclass for knowledgebase representation.
     """
-    knowledgebase_uuid: str
-    knowledgebase_path: str
-    knowledgebase_loader: str
+    uuid: str
+    path: str
+    loader: str
     embedding_model_uuid: str
     document_uuids: List[str]
 
@@ -85,16 +85,16 @@ class Document(BaseModel):
     """
     Dataclass for documents.
     """
-    document_uuid: str
-    document_content: str
-    document_metadata: dict
+    uuid: str
+    content: str
+    meta_data: dict
 
 
 class Controller(BaseModel):
     """
     Dataclass for controller representation.
     """
-    controller_uuid: str
+    uuid: str
     language_model_uuid: str
     knowlege_base_uuid: str
 
@@ -103,7 +103,7 @@ class Conversation(BaseModel):
     """
     Dataclass for conversation representation.
     """
-    conversation_uuid: str
+    uuid: str
     controller_uuid: str
     conversation_content: dict
 
