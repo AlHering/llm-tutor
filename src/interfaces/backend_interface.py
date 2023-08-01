@@ -39,25 +39,15 @@ class Model(BaseModel):
     model_loader: str
 
 
-class Collection(BaseModel):
-    """
-    Dataclass for knowledgebase collection representation.
-    """
-    collection_uuid: str
-    collection_path: str
-    embedding_type: str
-    preprocess_split: int
-    preprocess_overlap: int
-
-
-class KB(BaseModel):
+class KnowledgeBase(BaseModel):
     """
     Dataclass for knowledgebase representation.
     """
-    kb_uuid: str
-    kb_path: str
-    kb_loader: str
-    kb_embedding_type: str
+    knowledgebase_uuid: str
+    knowledgebase_path: str
+    knowledgebase_loader: str
+    embedding_model_uuid: str
+    document_uuids: List[str]
 
 
 class Document(BaseModel):
@@ -69,11 +59,22 @@ class Document(BaseModel):
     document_metadata: dict
 
 
-class DocumentList(BaseModel):
+class Controller(BaseModel):
     """
-    Dataclass for a document list.
+    Dataclass for controller representation.
     """
-    documents: List[Document]
+    controller_uuid: str
+    language_model_uuid: str
+    knowlege_base_uuid: str
+
+
+class Conversation(BaseModel):
+    """
+    Dataclass for conversation representation.
+    """
+    conversation_uuid: str
+    controller_uuid: str
+    conversation_content: dict
 
 
 """
@@ -85,17 +86,40 @@ class Endpoints(str, Enum):
     """
     String-based endpoint enum class.
     """
-    GET_STATUS = "/"
-    POST_START = "/start"
-    GET_CONFIGS = "/configs"
-    POST_SAVE_CONFIG = "/save_config"
-    POST_LOAD_CONFIG = "/load_config"
-    POST_LOAD_LLM = "/load_llm"
-    POST_LOAD_KB = "/load_kb"
-    POST_EMBED = "/embed"
-    POST_START_CONVERSATION = "/start_conversation"
-    POST_CONVERSATION_QUERY = "/conversation_query"
-    POST_QUERY = "/query"
+    BASE = "/api/v1"
+    GET_STATUS = f"{BASE}/status/"
+    POST_START = f"{BASE}/start/"
+
+    GET_CONTROLLER = f"{BASE}/controllers/"
+    POST_CONTROLLER = f"{BASE}/controllers/"
+    PUT_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}"
+    DELETE_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}"
+
+    GET_MODEL = f"{BASE}/model/"
+    POST_MODEL = f"{BASE}/model/"
+    PUT_MODEL = f"{BASE}/model/{{model_uuid}}"
+    DELETE_MODEL = f"{BASE}/model/{{model_uuid}}"
+
+    GET_KB = f"{BASE}/knowledgebases/"
+    POST_KB = f"{BASE}/knowledgebase/"
+    PUT_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
+    DELETE_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
+
+    GET_DOCUMENT = f"{BASE}/documents/"
+    POST_DOCUMENT = f"{BASE}/documents/"
+    PUT_DOCUMENT = f"{BASE}/documents/{{document_uuid}}"
+    DELETE_DOCUMENT = f"{BASE}/documents/{{document_uuid}}"
+
+    GET_CONVERSATION = f"{BASE}/conversations/"
+    POST_CONVERSATION = f"{BASE}/conversations/"
+    PUT_CONVERSATION = f"{BASE}/conversations/{{conversation_uuid}}"
+    DELETE_CONVERSATION = f"{BASE}/conversations/{{conversation_uuid}}"
+
+    POST_LOAD_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}/load"
+    POST_UNLOAD_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}/unload"
+
+    POST_CONVERSATION_QUERY = f"{BASE}/conversation/{{conversation_uuid}}/query/{{query}}"
+    POST_DIRECT_QUERY = f"{BASE}/controllers/{{controller_uuid}}/load"
 
     def __str__(self) -> str:
         """
