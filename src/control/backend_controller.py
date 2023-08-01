@@ -58,7 +58,7 @@ class BackendController(object):
             self.model[object_type].uuid == object_uuid
         ).first()
 
-    def add_object(self, object_type: str, **object_attributes: Optional[Any]) -> Optional[str]:
+    def post_object(self, object_type: str, **object_attributes: Optional[Any]) -> Optional[str]:
         """
         Method for adding an object.
         :param object_type: Target object type.
