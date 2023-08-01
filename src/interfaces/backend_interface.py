@@ -370,7 +370,8 @@ async def delete_model(model_uuid: str) -> dict:
     :param model_uuid: Model UUID.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.delete_object("model",
+                                             model_uuid)}
 
 
 """
@@ -435,7 +436,8 @@ async def delete_knowledgebase(knowledgebase_uuid: str) -> dict:
     :param knowledgebase_uuid: Knowledgebase UUID.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.delete_object("knowledgebase",
+                                             knowledgebase_uuid)}
 
 
 """
@@ -500,7 +502,8 @@ async def delete_document(document_uuid: str) -> dict:
     :param document_uuid: Document UUID.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.delete_object("document",
+                                             document_uuid)}
 
 
 """
@@ -565,7 +568,8 @@ async def delete_conversation(conversation_uuid: str) -> dict:
     :param conversation_uuid: Conversation UUID.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.delete_object("conversation",
+                                             conversation_uuid)}
 
 
 @BACKEND.post(Endpoints.POST_CONVERSATION_QUERY)
