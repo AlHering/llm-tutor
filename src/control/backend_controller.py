@@ -108,6 +108,16 @@ class LLMPool(object):
         self.threads[target_thread]["switch"].set()
         self.threads[target_thread]["thread"].join()
 
+    def query(self, target_thread: str, query: str) -> Optional[Any]:
+        """
+        Send query to target LLM.
+        :param target_thread: Target thread.
+        :param query: Query to send.
+        :return: Response.
+        """
+        self.threads[target_thread]["input"].put(query)
+        return self.threads[target_thread]["output"].get()
+
 
 class BackendController(object):
     """
