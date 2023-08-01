@@ -12,6 +12,18 @@ from src.configuration import configuration as cfg
 from src.model.backend_control.dataclasses import create_or_load_database
 
 
+class LLMPool(object):
+    """
+    Controller class for handling LLM instances.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initiation method.
+        """
+        pass
+
+
 class BackendController(object):
     """
     Controller class for handling backend interface requests.
