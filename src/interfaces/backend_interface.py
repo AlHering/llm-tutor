@@ -205,7 +205,7 @@ async def post_stop() -> dict:
 
 
 """
-Controller
+Controller interface
 """
 
 
@@ -265,7 +265,67 @@ async def delete_controller(controller_uuid: str) -> dict:
 
 
 """
-Knowledgebases
+Models interface
+"""
+
+
+@BACKEND.get(Endpoints.GET_MODELS)
+@access_validator(status=True)
+async def get_models() -> dict:
+    """
+    Endpoint for getting models.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.get(Endpoints.GET_MODEL)
+@access_validator(status=True)
+async def get_model(model_uuid: str) -> dict:
+    """
+    Endpoint for getting a specific model.
+    :param model_uuid: Model UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_MODEL)
+@access_validator(status=True)
+async def post_model(model: Model) -> dict:
+    """
+    Endpoint for posting a model.
+    :param model: Model.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.patch(Endpoints.PATCH_MODEL)
+@access_validator(status=True)
+async def patch_model(model_uuid: str, model: Model) -> dict:
+    """
+    Endpoint for patching a model.
+    :param model_uuid: Model UUID.
+    :param model: Model.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.delete(Endpoints.DELETE_MODEL)
+@access_validator(status=True)
+async def delete_model(model_uuid: str) -> dict:
+    """
+    Endpoint for deleting a model.
+    :param model_uuid: Model UUID.
+    :return: Response.
+    """
+    return {}
+
+
+"""
+Knowledgebases interface
 """
 
 
@@ -319,6 +379,126 @@ async def delete_knowledgebase(knowledgebase_uuid: str) -> dict:
     """
     Endpoint for deleting a knowledgebase.
     :param knowledgebase_uuid: Knowledgebase UUID.
+    :return: Response.
+    """
+    return {}
+
+
+"""
+Document interface
+"""
+
+
+@BACKEND.get(Endpoints.GET_DOCUMENTS)
+@access_validator(status=True)
+async def get_documents() -> dict:
+    """
+    Endpoint for getting documents.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.get(Endpoints.GET_DOCUMENT)
+@access_validator(status=True)
+async def get_document(document_uuid: str) -> dict:
+    """
+    Endpoint for getting a specific document.
+    :param document_uuid: Document UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_DOCUMENT)
+@access_validator(status=True)
+async def post_document(document: Document) -> dict:
+    """
+    Endpoint for posting a document.
+    :param document: Document.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.patch(Endpoints.PATCH_DOCUMENT)
+@access_validator(status=True)
+async def patch_document(document_uuid: str, document: Document) -> dict:
+    """
+    Endpoint for patching a document.
+    :param document_uuid: Document UUID.
+    :param document: Document.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.delete(Endpoints.DELETE_DOCUMENT)
+@access_validator(status=True)
+async def delete_document(document_uuid: str) -> dict:
+    """
+    Endpoint for deleting a document.
+    :param document_uuid: Document UUID.
+    :return: Response.
+    """
+    return {}
+
+
+"""
+Conversation interface
+"""
+
+
+@BACKEND.get(Endpoints.GET_CONVERSATIONS)
+@access_validator(status=True)
+async def get_conversations() -> dict:
+    """
+    Endpoint for getting conversations.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.get(Endpoints.GET_CONVERSATION)
+@access_validator(status=True)
+async def get_conversation(conversation_uuid: str) -> dict:
+    """
+    Endpoint for getting a specific conversation.
+    :param conversation_uuid: Conversation UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_CONVERSATION)
+@access_validator(status=True)
+async def post_conversation(conversation: Conversation) -> dict:
+    """
+    Endpoint for posting a conversation.
+    :param conversation: Conversation.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.patch(Endpoints.PATCH_CONVERSATION)
+@access_validator(status=True)
+async def patch_conversation(conversation_uuid: str, conversation: Conversation) -> dict:
+    """
+    Endpoint for patching a conversation.
+    :param conversation_uuid: Conversation UUID.
+    :param conversation: Conversation.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.delete(Endpoints.DELETE_CONVERSATION)
+@access_validator(status=True)
+async def delete_conversation(conversation_uuid: str) -> dict:
+    """
+    Endpoint for deleting a conversation.
+    :param conversation_uuid: Conversation UUID.
     :return: Response.
     """
     return {}
