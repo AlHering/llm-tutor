@@ -34,12 +34,16 @@ class LLMPool(object):
     Controller class for handling LLM instances.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, queue_spawns: bool = False) -> None:
         """
         Initiation method.
+        :param queue_spawns: Queue up instanciation until resources are available.
+            Defaults to False.
         """
+        # TODO: Add prioritization and potentially interrupt concept
+        self.queue_spawns = queue_spawns
+        self.main_switch = Event()
         self.threads = {}
-        self.llms = {}
 
     def validate_resources(self, llm_configuration: dict, queue: bool = False) -> bool:
         """
