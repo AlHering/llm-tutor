@@ -264,6 +264,40 @@ async def delete_controller(controller_uuid: str) -> dict:
     return {}
 
 
+@BACKEND.post(Endpoints.POST_LOAD_CONTROLLER)
+@access_validator(status=True)
+async def post_load_controller(controller_uuid: str) -> dict:
+    """
+    Endpoint for loading a controller.
+    :param controller_uuid: Controller UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_UNLOAD_CONTROLLER)
+@access_validator(status=True)
+async def post_unload_controller(controller_uuid: str) -> dict:
+    """
+    Endpoint for unloading a controller.
+    :param controller_uuid: Controller UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_DIRECT_QUERY)
+@access_validator(status=True)
+async def post_direct_query(controller_uuid: str, query: str) -> dict:
+    """
+    Endpoint for posting a query to a controller.
+    :param controller_uuid: Controller UUID.
+    :param query: Query to forward.
+    :return: Response.
+    """
+    return {}
+
+
 """
 Models interface
 """
@@ -499,6 +533,18 @@ async def delete_conversation(conversation_uuid: str) -> dict:
     """
     Endpoint for deleting a conversation.
     :param conversation_uuid: Conversation UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_CONVERSATION_QUERY)
+@access_validator(status=True)
+async def post_conversation_query(conversation_uuid: str, query: str) -> dict:
+    """
+    Endpoint for posting a conversation query.
+    :param conversation_uuid: Conversation UUID.
+    :param query: Query to forward.
     :return: Response.
     """
     return {}
