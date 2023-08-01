@@ -6,6 +6,7 @@
 ****************************************************
 """
 import os
+from uuid import uuid4
 from typing import Optional, Any, List
 from src.configuration import configuration as cfg
 from src.model.backend_control.dataclasses import create_or_load_database
@@ -64,6 +65,8 @@ class BackendController(object):
         :param object_attributes: Object attributes.
         :return: Object UUID of added object, if adding was successful.
         """
+        if "uuid" not in object_attributes:
+            object_attributes["uuid"] = str(uuid4())
         obj = self.model[object_type](**object_attributes)
         with self.session_factory() as session:
             session.add(obj)

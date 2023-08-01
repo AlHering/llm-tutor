@@ -96,7 +96,7 @@ class Controller(BaseModel):
     """
     uuid: str
     language_model_uuid: str
-    knowlege_base_uuid: str
+    knowledgebase_uuid: str
 
 
 class Conversation(BaseModel):
@@ -220,7 +220,8 @@ async def get_controllers() -> dict:
     Endpoint for getting controllers.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"controllers": CONTROLLER.get_objects("controller")}
 
 
 @BACKEND.get(Endpoints.GET_CONTROLLER)
@@ -231,7 +232,8 @@ async def get_controller(controller_uuid: str) -> dict:
     :param controller_uuid: Controller UUID.
     :return: Response.
     """
-    return {}
+    global CONTROLLER
+    return {"controller": CONTROLLER.get_object("controller", controller_uuid)}
 
 
 @BACKEND.post(Endpoints.POST_CONTROLLER)
@@ -242,7 +244,8 @@ async def post_controller(controller: Controller) -> dict:
     :param controller: Controller.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.add_object("controller",
+                                          **controller.dict())}
 
 
 @BACKEND.patch(Endpoints.PATCH_CONTROLLER)
@@ -254,7 +257,9 @@ async def patch_controller(controller_uuid: str, controller: Controller) -> dict
     :param controller: Controller.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.patch_object("controller",
+                                            controller_uuid,
+                                            controller.json())}
 
 
 @BACKEND.delete(Endpoints.DELETE_CONTROLLER)
@@ -265,7 +270,8 @@ async def delete_controller(controller_uuid: str) -> dict:
     :param controller_uuid: Controller UUID.
     :return: Response.
     """
-    return {}
+    return {"uuid": CONTROLLER.delete_object("controller",
+                                             controller_uuid)}
 
 
 @BACKEND.post(Endpoints.POST_LOAD_CONTROLLER)
