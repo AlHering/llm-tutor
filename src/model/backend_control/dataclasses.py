@@ -7,6 +7,7 @@
 """
 from sqlalchemy import Column, String, JSON, ForeignKey, BLOB
 from sqlalchemy.ext.automap import automap_base, classname_for_table
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from src.utility.bronze import sqlalchemy_utility
 
@@ -90,11 +91,14 @@ def create_or_load_database(database_uri: str) -> dict:
     }
     session_factory = sqlalchemy_utility.get_session_factory(engine)
 
-    for dataclass_content in [CONTROLLER, MODEL, KNOWLEDGEBASE, DOCUMENT, CONVERSATION]:
-        if dataclass_content["__tablename__"] not in model:
-            model[dataclass_content["__tablename__"]] = type(
-                dataclass_content["__tablename__"].title(), (base,), dataclass_content)
-    base.metadata.create_all(bind=engine)
+    if not model:
+        base = declarative_base()
+
+        for dataclass_content in [CONTROLLER, MODEL, KNOWLEDGEBASE, DOCUMENT, CONVERSATION]:
+            if dataclass_content["__tablename__"] not in model:
+                model[dataclass_content["__tablename__"]] = type(
+                    dataclass_content["__tablename__"].title(), (base,), dataclass_content)
+        base.metadata.create_all(bind=engine)
 
     return {
         "base": base,
