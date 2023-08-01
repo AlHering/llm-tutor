@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from uuid import uuid4
 from functools import wraps
 from src.configuration import configuration as cfg
-from src.control.tutor_controller import TutorController
+from src.control.backend_controller import BackendController
 
 """
 Backend control
@@ -22,7 +22,7 @@ Backend control
 BACKEND = FastAPI(title="LLMTutor Backend", version="0.1",
                   description="LLM-powered backend for document embedding an querying.")
 STATUS = False
-CONTROLLER: TutorController = None
+CONTROLLER: BackendController = None
 
 
 def access_validator(status: bool) -> Optional[Any]:
@@ -188,6 +188,8 @@ async def post_start() -> dict:
     :return: Response.
     """
     global STATUS
+    global CONTROLLER
+    CONTROLLER = BackendController()
     STATUS = True
     return {"message": f"System started!"}
 
