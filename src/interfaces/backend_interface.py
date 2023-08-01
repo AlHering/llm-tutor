@@ -70,7 +70,7 @@ class Model(BaseModel):
     model_loader: str
 
 
-class KnowledgeBase(BaseModel):
+class Knowledgebase(BaseModel):
     """
     Dataclass for knowledgebase representation.
     """
@@ -259,6 +259,66 @@ async def delete_controller(controller_uuid: str) -> dict:
     """
     Endpoint for deleting a controller.
     :param controller_uuid: Controller UUID.
+    :return: Response.
+    """
+    return {}
+
+
+"""
+Knowledgebases
+"""
+
+
+@BACKEND.get(Endpoints.GET_KBS)
+@access_validator(status=True)
+async def get_knowledgebases() -> dict:
+    """
+    Endpoint for getting knowledgebases.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.get(Endpoints.GET_KB)
+@access_validator(status=True)
+async def get_knowledgebase(knowledgebase_uuid: str) -> dict:
+    """
+    Endpoint for getting a specific knowledgebase.
+    :param knowledgebase_uuid: Knowledgebase UUID.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.post(Endpoints.POST_KB)
+@access_validator(status=True)
+async def post_knowledgebase(knowledgebase: Knowledgebase) -> dict:
+    """
+    Endpoint for posting a knowledgebase.
+    :param knowledgebase: Knowledgebase.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.patch(Endpoints.PATCH_KB)
+@access_validator(status=True)
+async def patch_knowledgebase(knowledgebase_uuid: str, knowledgebase: Knowledgebase) -> dict:
+    """
+    Endpoint for patching a knowledgebase.
+    :param knowledgebase_uuid: Knowledgebase UUID.
+    :param knowledgebase: Knowledgebase.
+    :return: Response.
+    """
+    return {}
+
+
+@BACKEND.delete(Endpoints.DELETE_KB)
+@access_validator(status=True)
+async def delete_knowledgebase(knowledgebase_uuid: str) -> dict:
+    """
+    Endpoint for deleting a knowledgebase.
+    :param knowledgebase_uuid: Knowledgebase UUID.
     :return: Response.
     """
     return {}
