@@ -27,13 +27,15 @@ LOGGER = logging.Logger("LLMTutor")
 
 
 """
-FRONTENDS
+Backends
+"""
+BACKEND_HOST = ENV.get("BACKEND_HOST", "127.0.0.1")
+BACKEND_PORT = ENV.get("BACKEND_PORT", "7861")
+
+
+"""
+Frontends
 """
 FLASK_CONFIG = flask_frontend_config.global_config
-PATHS.FLASK_COMMON_STATIC = os.path.join(
-    PATHS.SOURCE_PATH, "view", "flask_frontend", "common_static")
-PATHS.FLASK_COMMON_TEMPLATES = os.path.join(
-    PATHS.SOURCE_PATH, "view", "flask_frontend", "common_templates")
 STREAMLIT_CONFIG = streamlit_frontend_config.CONFIG
-
 FLASK_CONFIG["streamlit_port"] = str(STREAMLIT_CONFIG["server"]["port"])

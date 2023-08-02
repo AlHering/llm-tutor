@@ -7,93 +7,87 @@
 ****************************************************
 """
 import os
-import asyncio
+from time import sleep
+from typing import Any
+from uuid import uuid4
 import streamlit as st
 from src.configuration import configuration as cfg
 from src.view.streamlit_frontend.chat_template import css, bot_template, user_template
-from langchain.docstore.document import Document
+from src.utility.bronze import streamlit_utility
+from src.interfaces. streamlit_interface import start_controller_if_stopped, handle_request, BACKEND_ENDPOINTS
 import json
 import requests
+from src.view.streamlit_frontend.pages import knowledgebase_app, model_app
 
 
-BACKEND_BASE_URL = "http://127.0.0.1:7861"
-
-
-def handle_user_query(query):
+def choose_config() -> None:
     """
-    Function for handling user query.
-    :param query: User query.
+    Callback function for choosing config.
     """
-    pass
+    handle_request(
+        "post", BACKEND_ENDPOINTS.POST_LOAD_CONFIG,  {"config_name": st.session_state["tutor_config_name"]}, as_params=True)
 
 
-def handle_request(method: str, endpoint: str, data: dict = None):
-    print(f"{method} :: {endpoint} :: {data}")
-    try:
-        response = {"get": requests.get, "post": requests.post}[
-            method](f"{BACKEND_BASE_URL}{endpoint}", json=data)
+def run_page() -> None:
+    """
+    Function for running "Home" page.
+    """
+    st.title("LLM Tutor")
+    st.write(css, unsafe_allow_html=True)
 
-    except requests.exceptions.SSLError:
-        print("SSL Error")
-        response = {"get": requests.get, "post": requests.post}[
-            method](f"{BACKEND_BASE_URL}{endpoint}", json=data, verify=False)
-    try:
-        res = json.loads(response.content.decode('utf-8'))
-    except json.decoder.JSONDecodeError:
-        res = response.text
-    print(res)
-    return res
+    st.header("Upload, analyze and talk to learning material.")
+    if "backend_controller_started" not in st.session_state:
+        start_controller_if_stopped()
+        st.session_state["backend_controller_started"] = True
+
+    new_option = st.text_input(
+        "Create a new Tutor:", placeholder="Tutor Name")
+    if new_option:
+        handle_request("post", BACKEND_ENDPOINTS.POST_SAVE_CONFIG, {
+            "config_name": new_option}, as_params=True)
+        st.session_state["tutor_config_options"].insert(0, new_option)
+        st.session_state["tutor_config_name"] = new_option
+        choose_config()
+
+    st.session_state["tutor_config_name"] = st.selectbox(
+        'Choose a Tutor:',
+        st.session_state["tutor_config_options"], on_change=choose_config)
+
+
+PAGES = {
+    "Home": run_page,
+    "Knowledgebases": knowledgebase_app.run_page,
+    "Models": model_app.run_page,
+}
 
 
 def run_app() -> None:
     """
-    Function for running app.
+    Function for running the app.
     """
-    resp = handle_request("get", "/")
-    if resp["message"] == "System is stopped":
-        resp = handle_request("post", "/start")
-        print(resp)
-        resp = handle_request("post", "/load_llm", {
-            "model_path": os.path.join(cfg.PATHS.TEXTGENERATION_MODEL_PATH,
-                                       "TheBloke_orca_mini_7B-GGML/orca-mini-7b.ggmlv3.q4_1.bin"),
-            "model_type": "llamacpp"
-        })
-        print(resp)
-        resp = handle_request("post", "/load_kb")
-        print(resp)
-
     st.set_page_config(
         page_title="LLM Tutor",
         page_icon=":books:"
     )
-    st.write(css, unsafe_allow_html=True)
 
-    st.header("LLM Tutor: Upload and talk to learning material.")
-    st.text_input("Query:")
+    start_controller_if_stopped()
+    st.session_state["tutor_config_name"] = None
+    st.session_state["kb_config_name"] = None
+    st.session_state["llm_config_name"] = None
+    st.session_state["tutor_config_options"] = handle_request(
+        "get", BACKEND_ENDPOINTS.GET_CONFIGS).get("configs", [])
 
-    st.write(user_template.replace("{{MSG}}", "Test"), unsafe_allow_html=True)
-    st.write(bot_template.replace("{{MSG}}", "Test"), unsafe_allow_html=True)
+    page = st.sidebar.selectbox(
+        "Navigation",
+        PAGES.keys()
+    )
+    if st.session_state["tutor_config_name"] is not None:
+        with st.sidebar.expander(
+            f"Profile: {st.session_state['tutor_config_name']}"
+        ):
+            st.write(st.session_state["kb_config_name"])
 
-    with st.sidebar:
-        st.subheader("Learning Material")
-        files = {
-            "skripts": st.file_uploader("Skripts", accept_multiple_files=True),
-            "presentations": st.file_uploader("Presentations", accept_multiple_files=True),
-            "books": st.file_uploader("Books", accept_multiple_files=True)
-        }
-        if st.button("Load"):
-            with st.spinner("Processing"):
-                for doc_type in files:
-                    if files[doc_type]:
-                        data = {"documents": [
-                                {"page_content": f.read().decode("utf-8"),
-                                 "metadata": {"file_name": f.name, "file_size": f.size, "file_type": f.type},
-                                 "collection": doc_type
-                                 }
-                                for f in files[doc_type]]}
-                        resp = handle_request("post", "/embed", data=data)
-                        print(resp)
-                        files[doc_type].clear()
+    PAGES[page]()
 
 
 if __name__ == "__main__":
