@@ -48,12 +48,12 @@ class BackendController(object):
         populate_data_instrastructure(
             self.engine, self.schema, self.model)
 
+        self.base.prepare(autoload_with=self.engine)
         self.session_factory = sqlalchemy_utility.get_session_factory(
             self.engine)
         self._logger.info("base created with")
         self._logger.info(f"Classes: {self.base.classes.keys()}")
         self._logger.info(f"Tables: {self.base.metadata.tables.keys()}")
-        self.base.prepare(autoload_with=self.engine)
 
         self.primary_keys = {
             object_class: self.model[object_class].__mapper__.primary_key[0].name for object_class in self.model}
