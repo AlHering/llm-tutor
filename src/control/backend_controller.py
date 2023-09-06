@@ -38,13 +38,7 @@ class BackendController(object):
         self._logger.info("Automapping existing structures")
         self.base = sqlalchemy_utility.automap_base()
         self.engine = sqlalchemy_utility.get_engine(
-            f"sqlite:///{os.path.join(cfg.PATHS.DATA_PATH), 'backend.db'}" if database_uri is None else database_uri)
-        self.base.prepare(autoload_with=self.engine)
-        self.session_factory = sqlalchemy_utility.get_session_factory(
-            self.engine)
-        self._logger.info("base created with")
-        self._logger.info(f"Classes: {self.base.classes.keys()}")
-        self._logger.info(f"Tables: {self.base.metadata.tables.keys()}")
+            f"sqlite:///{os.path.join(cfg.PATHS.DATA_PATH, 'backend.db')}" if database_uri is None else database_uri)
 
         self.model = {}
         self.schema = "backend."
@@ -53,13 +47,20 @@ class BackendController(object):
             f"Generating model tables for website with schema {self.schema}")
         populate_data_instrastructure(
             self.engine, self.schema, self.model)
+
+        self.session_factory = sqlalchemy_utility.get_session_factory(
+            self.engine)
+        self._logger.info("base created with")
+        self._logger.info(f"Classes: {self.base.classes.keys()}")
+        self._logger.info(f"Tables: {self.base.metadata.tables.keys()}")
+        self.base.prepare(autoload_with=self.engine)
+
         self.primary_keys = {
             object_class: self.model[object_class].__mapper__.primary_key[0].name for object_class in self.model}
-        if self.verbose:
-            self._logger.info(f"Datamodel after addition: {self.model}")
-            for object_class in self.model:
-                self._logger.info(
-                    f"Object type '{object_class}' currently has {self.get_object_count_by_type(object_class)} registered entries.")
+        self._logger.info(f"Datamodel after addition: {self.model}")
+        for object_class in self.model:
+            self._logger.info(
+                f"Object type '{object_class}' currently has {self.get_object_count_by_type(object_class)} registered entries.")
         self._logger.info("Creating new structures")
         # TODO: Implement database population
 
