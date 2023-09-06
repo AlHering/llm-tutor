@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ****************************************************
-*                    LLM Tutor                     *
+*          Basic Language Model Backend            *
 *            (c) 2023 Alexander Hering             *
 ****************************************************
 """
@@ -16,6 +16,7 @@ SOURCE_PATH = os.path.join(PACKAGE_PATH, "src")
 DOCS_PATH = os.path.join(PACKAGE_PATH, "docs")
 SUBMODULE_PATH = os.path.join(SOURCE_PATH, "submodules")
 DATA_PATH = os.path.join(PACKAGE_PATH, "data")
+TEST_PATH = os.path.join(DATA_PATH, "testing")
 PLUGIN_PATH = os.path.join(SOURCE_PATH, "plugins")
 DUMP_PATH = os.path.join(DATA_PATH, "processes", "dumps")
 
@@ -38,14 +39,7 @@ INSTRUCT_XL_PATH = os.path.join(
 Backends
 """
 BACKEND_PATH = os.path.join(DATA_PATH, "backend")
-KB_PATH = os.path.join(BACKEND_PATH, "kb")
-CONFIG_PATH = os.path.join(BACKEND_PATH, "configs")
-
-
-"""
-Frontends
-"""
-FLASK_COMMON_STATIC = os.path.join(
-    SOURCE_PATH, "view", "flask_frontend", "common_static")
-FLASK_COMMON_TEMPLATES = os.path.join(
-    SOURCE_PATH, "view", "flask_frontend", "common_templates")
+MODEL_CONTROL_FRONTEND_CACHE = os.path.join(
+    BACKEND_PATH, "model_control", "frontend_cache.json")
+MODEL_CONTROL_FRONTEND_ASSETS = os.path.join(
+    BACKEND_PATH, "model_control", "assets")

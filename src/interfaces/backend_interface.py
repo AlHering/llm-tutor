@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 ****************************************************
-*                    LLM Tutor                     *
+*          Basic Language Model Backend            *
 *            (c) 2023 Alexander Hering             *
 ****************************************************
 """
 import uvicorn
-import os
 from enum import Enum
-from typing import Union, List, Optional, Any, Dict
-from fastapi import FastAPI
+from typing import Optional, Any
+from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
-from uuid import uuid4
 from functools import wraps
 from src.configuration import configuration as cfg
 from src.control.backend_controller import BackendController
@@ -19,20 +17,17 @@ from src.control.backend_controller import BackendController
 """
 Backend control
 """
-BACKEND = FastAPI(title="LLMTutor Backend", version="0.1",
-                  description="LLM-powered backend for document embedding an querying.")
-STATUS = False
-CONTROLLER: BackendController = None
+BACKEND = FastAPI(title="LLM Tutor Backend", version="0.1",
+                  description="Backend for serving LLM Tutor services.")
+CONTROLLER: BackendController = BackendController()
 
 
-def access_validator(status: bool) -> Optional[Any]:
+def access_validator() -> Optional[Any]:
     """
     Validation decorator.
     :param func: Decorated function.
-    :param status: Status to check.
     :return: Error message if status is incorrect, else function return.
     """
-    global STATUS
 
     def wrapper(func: Any) -> Optional[Any]:
         """
@@ -47,10 +42,7 @@ def access_validator(status: bool) -> Optional[Any]:
             :param args: Arguments.
             :param kwargs: Keyword arguments.
             """
-            if status != STATUS:
-                return {"message": f"System is {' already started' if STATUS else 'currently stopped'}"}
-            else:
-                return await func(*args, **kwargs)
+            return await func(*args, **kwargs)
         return inner
     return wrapper
 
@@ -64,48 +56,9 @@ class Model(BaseModel):
     """
     Dataclass for model representation.
     """
-    uuid: str
     path: str
     type: str
     loader: str
-
-
-class Knowledgebase(BaseModel):
-    """
-    Dataclass for knowledgebase representation.
-    """
-    uuid: str
-    path: str
-    loader: str
-    embedding_model_uuid: str
-    document_uuids: List[str]
-
-
-class Document(BaseModel):
-    """
-    Dataclass for documents.
-    """
-    uuid: str
-    content: str
-    meta_data: dict
-
-
-class Controller(BaseModel):
-    """
-    Dataclass for controller representation.
-    """
-    uuid: str
-    language_model_uuid: str
-    knowledgebase_uuid: str
-
-
-class Conversation(BaseModel):
-    """
-    Dataclass for conversation representation.
-    """
-    uuid: str
-    controller_uuid: str
-    conversation_content: dict
 
 
 """
@@ -118,45 +71,20 @@ class Endpoints(str, Enum):
     String-based endpoint enum class.
     """
     BASE = "/api/v1"
-    GET_STATUS = f"{BASE}/status/"
-    POST_START = f"{BASE}/start/"
-    POST_STOP = f"{BASE}/stop/"
 
-    GET_CONTROLLERS = f"{BASE}/controllers/"
-    GET_CONTROLLER = f"{BASE}/controller/{{controller_uuid}}"
-    POST_CONTROLLER = f"{BASE}/controller/"
-    PATCH_CONTROLLER = f"{BASE}/controller/{{controller_uuid}}"
-    DELETE_CONTROLLER = f"{BASE}/controller/{{controller_uuid}}"
+    GET_LLM_CONFIGS = f"{BASE}/llms/"
+    GET_KB_CONFIGS = f"{BASE}/kbs/"
 
-    GET_MODELS = f"{BASE}/models/"
-    GET_MODEL = f"{BASE}/model/"
-    POST_MODEL = f"{BASE}/model/"
-    PATCH_MODEL = f"{BASE}/model/{{model_uuid}}"
-    DELETE_MODEL = f"{BASE}/model/{{model_uuid}}"
+    SET_LLM_CONFIG = f"{BASE}/llms/{{llm_id}}"
+    SET_KB_CONFIG = f"{BASE}/kbs/{{kb_id}}"
 
-    GET_KBS = f"{BASE}/knowledgebases/"
-    GET_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
-    POST_KB = f"{BASE}/knowledgebase/"
-    PATCH_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
-    DELETE_KB = f"{BASE}/knowledgebase/{{knowledgebase_uuid}}"
+    CREATE_KB_CONFIG = f"{BASE}/kbs/create"
+    DELETE_KB_CONFIG = f"{BASE}/kbs/delete/{{kb_id}}"
 
-    GET_DOCUMENTS = f"{BASE}/documents/"
-    GET_DOCUMENT = f"{BASE}/document/{{document_uuid}}"
-    POST_DOCUMENT = f"{BASE}/document/"
-    PATCH_DOCUMENT = f"{BASE}/document/{{document_uuid}}"
-    DELETE_DOCUMENT = f"{BASE}/document/{{document_uuid}}"
+    UPLOAD_DOCUMENT = f"{BASE}/kbs/upload/{{kb_id}}"
+    DELETE_DOCUMENT = f"{BASE}/kbs/delete_doc/{{doc_id}}"
 
-    GET_CONVERSATIONS = f"{BASE}/conversations/"
-    GET_CONVERSATION = f"{BASE}/conversation/{{conversation_uuid}}"
-    POST_CONVERSATION = f"{BASE}/conversation/"
-    PATCH_CONVERSATION = f"{BASE}/conversation/{{conversation_uuid}}"
-    DELETE_CONVERSATION = f"{BASE}/conversation/{{conversation_uuid}}"
-
-    POST_LOAD_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}/load"
-    POST_UNLOAD_CONTROLLER = f"{BASE}/controllers/{{controller_uuid}}/unload"
-
-    POST_CONVERSATION_QUERY = f"{BASE}/conversation/{{conversation_uuid}}/query/{{query}}"
-    POST_DIRECT_QUERY = f"{BASE}/controllers/{{controller_uuid}}/load"
+    POST_QUERY = f"{BASE}/query"
 
     def __str__(self) -> str:
         """
@@ -166,423 +94,122 @@ class Endpoints(str, Enum):
 
 
 """
-Basic backend endpoints
+Endpoints
 """
 
 
-@BACKEND.get(Endpoints.GET_STATUS)
-async def get_status() -> dict:
+@BACKEND.get(Endpoints.GET_LLM_CONFIGS)
+@access_validator()
+async def get_llm_configs() -> dict:
     """
-    Root endpoint for getting system status.
-    :return: Response.
-    """
-    global STATUS
-    return {"message": f"System is {'started' if STATUS else 'stopped'}!"}
-
-
-@BACKEND.post(Endpoints.POST_START)
-@access_validator(status=False)
-async def post_start() -> dict:
-    """
-    Endpoint for starting system.
-    :return: Response.
-    """
-    global STATUS
-    global CONTROLLER
-    CONTROLLER = BackendController()
-    STATUS = True
-    return {"message": f"System started!"}
-
-
-@BACKEND.post(Endpoints.POST_STOP)
-@access_validator(status=True)
-async def post_stop() -> dict:
-    """
-    Endpoint for stopping system.
-    :return: Response.
-    """
-    global STATUS
-    global CONTROLLER
-    CONTROLLER.shutdown()
-    STATUS = False
-    return {"message": f"System stopped!"}
-
-
-"""
-Controller endpoints
-"""
-
-
-@BACKEND.get(Endpoints.GET_CONTROLLERS)
-@access_validator(status=True)
-async def get_controllers() -> dict:
-    """
-    Endpoint for getting controllers.
+    Endpoint for getting LLM configs.
     :return: Response.
     """
     global CONTROLLER
-    return {"controllers": CONTROLLER.get_objects("controller")}
+    return {"llm_configs": CONTROLLER.get_objects("llm_config")}
 
 
-@BACKEND.get(Endpoints.GET_CONTROLLER)
-@access_validator(status=True)
-async def get_controller(controller_uuid: str) -> dict:
+@BACKEND.get(Endpoints.GET_LLM_CONFIGS)
+@access_validator()
+async def get_kb_configs() -> dict:
     """
-    Endpoint for getting a specific controller.
-    :param controller_uuid: Controller UUID.
+    Endpoint for getting KB configs.
     :return: Response.
     """
     global CONTROLLER
-    return {"controller": CONTROLLER.get_object("controller", controller_uuid)}
+    return {"kb_configs": CONTROLLER.get_objects("kb_config")}
 
 
-@BACKEND.post(Endpoints.POST_CONTROLLER)
-@access_validator(status=True)
-async def post_controller(controller: Controller) -> dict:
+@BACKEND.post(Endpoints.SET_LLM_CONFIGS)
+@access_validator()
+async def set_llm_config(config_id: int) -> dict:
     """
-    Endpoint for posting a controller.
-    :param controller: Controller.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.post_object("controller",
-                                           **controller.dict())}
-
-
-@BACKEND.patch(Endpoints.PATCH_CONTROLLER)
-@access_validator(status=True)
-async def patch_controller(controller_uuid: str, controller: Controller) -> dict:
-    """
-    Endpoint for patching a controller.
-    :param controller_uuid: Controller UUID.
-    :param controller: Controller.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.patch_object("controller",
-                                            controller_uuid,
-                                            **controller.dict())}
-
-
-@BACKEND.delete(Endpoints.DELETE_CONTROLLER)
-@access_validator(status=True)
-async def delete_controller(controller_uuid: str) -> dict:
-    """
-    Endpoint for deleting a controller.
-    :param controller_uuid: Controller UUID.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.delete_object("controller",
-                                             controller_uuid)}
-
-
-@BACKEND.post(Endpoints.POST_LOAD_CONTROLLER)
-@access_validator(status=True)
-async def post_load_controller(controller_uuid: str) -> dict:
-    """
-    Endpoint for loading a controller.
-    :param controller_uuid: Controller UUID.
-    :return: Response.
-    """
-    return {}
-
-
-@BACKEND.post(Endpoints.POST_UNLOAD_CONTROLLER)
-@access_validator(status=True)
-async def post_unload_controller(controller_uuid: str) -> dict:
-    """
-    Endpoint for unloading a controller.
-    :param controller_uuid: Controller UUID.
-    :return: Response.
-    """
-    return {}
-
-
-@BACKEND.post(Endpoints.POST_DIRECT_QUERY)
-@access_validator(status=True)
-async def post_direct_query(controller_uuid: str, query: str) -> dict:
-    """
-    Endpoint for posting a query to a controller.
-    :param controller_uuid: Controller UUID.
-    :param query: Query to forward.
-    :return: Response.
-    """
-    return {}
-
-
-"""
-Models endpoints
-"""
-
-
-@BACKEND.get(Endpoints.GET_MODELS)
-@access_validator(status=True)
-async def get_models() -> dict:
-    """
-    Endpoint for getting models.
+    Endpoint for setting active LLM config.
+    :param config_id: int: Config ID.
     :return: Response.
     """
     global CONTROLLER
-    return {"models": CONTROLLER.get_objects("model")}
+    status = CONTROLLER.set_active("llm_config", config_id)
+    return {"successful": status}
 
 
-@BACKEND.get(Endpoints.GET_MODEL)
-@access_validator(status=True)
-async def get_model(model_uuid: str) -> dict:
+@BACKEND.post(Endpoints.SET_LLM_CONFIGS)
+@access_validator()
+async def set_kb_config(config_id: int) -> dict:
     """
-    Endpoint for getting a specific model.
-    :param model_uuid: Model UUID.
+    Endpoint for setting active KB config.
+    :param config_id: int: Config ID.
     :return: Response.
     """
     global CONTROLLER
-    return {"models": CONTROLLER.get_object("model", model_uuid)}
+    status = CONTROLLER.set_active("llm_config", config_id)
+    return {"successful": status}
 
 
-@BACKEND.post(Endpoints.POST_MODEL)
-@access_validator(status=True)
-async def post_model(model: Model) -> dict:
+@BACKEND.post(Endpoints.CREATE_KB_CONFIG)
+@access_validator()
+async def post_kb_config(payload: dict) -> dict:
     """
-    Endpoint for posting a model.
-    :param model: Model.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.post_object("model",
-                                           **model.dict())}
-
-
-@BACKEND.patch(Endpoints.PATCH_MODEL)
-@access_validator(status=True)
-async def patch_model(model_uuid: str, model: Model) -> dict:
-    """
-    Endpoint for patching a model.
-    :param model_uuid: Model UUID.
-    :param model: Model.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.patch_object("model",
-                                            model_uuid,
-                                            **model.dict())}
-
-
-@BACKEND.delete(Endpoints.DELETE_MODEL)
-@access_validator(status=True)
-async def delete_model(model_uuid: str) -> dict:
-    """
-    Endpoint for deleting a model.
-    :param model_uuid: Model UUID.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.delete_object("model",
-                                             model_uuid)}
-
-
-"""
-Knowledgebases endpoints
-"""
-
-
-@BACKEND.get(Endpoints.GET_KBS)
-@access_validator(status=True)
-async def get_knowledgebases() -> dict:
-    """
-    Endpoint for getting knowledgebases.
+    Endpoint for setting active KB config.
+    :param payload: Config.
     :return: Response.
     """
     global CONTROLLER
-    return {"knowledgebases": CONTROLLER.get_objects("knowledgebase")}
+    config_id = CONTROLLER.post_object("kb_config", config=payload)
+    return {"config_id": config_id}
 
 
-@BACKEND.get(Endpoints.GET_KB)
-@access_validator(status=True)
-async def get_knowledgebase(knowledgebase_uuid: str) -> dict:
+@BACKEND.delete(Endpoints.DELETE_KB_CONFIG)
+@access_validator()
+async def delete_kb_config(config_id: int) -> dict:
     """
-    Endpoint for getting a specific knowledgebase.
-    :param knowledgebase_uuid: Knowledgebase UUID.
+    Endpoint for setting active KB config.
+    :param config_id: int: Config ID.
     :return: Response.
     """
     global CONTROLLER
-    return {"knowledgebase": CONTROLLER.get_object("knowledgebase", knowledgebase_uuid)}
+    config_id = CONTROLLER.delete_object("kb_config", config_id)
+    return {"config_id": config_id}
 
 
-@BACKEND.post(Endpoints.POST_KB)
-@access_validator(status=True)
-async def post_knowledgebase(knowledgebase: Knowledgebase) -> dict:
+@BACKEND.post(Endpoints.UPLOAD_DOCUMENT)
+@access_validator()
+async def upload_document(config_id: int, document_content: str) -> dict:
     """
-    Endpoint for posting a knowledgebase.
-    :param knowledgebase: Knowledgebase.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.post_object("knowledgebase",
-                                           **knowledgebase.dict())}
-
-
-@BACKEND.patch(Endpoints.PATCH_KB)
-@access_validator(status=True)
-async def patch_knowledgebase(knowledgebase_uuid: str, knowledgebase: Knowledgebase) -> dict:
-    """
-    Endpoint for patching a knowledgebase.
-    :param knowledgebase_uuid: Knowledgebase UUID.
-    :param knowledgebase: Knowledgebase.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.patch_object("knowledgebase",
-                                            knowledgebase_uuid,
-                                            **knowledgebase.dict())}
-
-
-@BACKEND.delete(Endpoints.DELETE_KB)
-@access_validator(status=True)
-async def delete_knowledgebase(knowledgebase_uuid: str) -> dict:
-    """
-    Endpoint for deleting a knowledgebase.
-    :param knowledgebase_uuid: Knowledgebase UUID.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.delete_object("knowledgebase",
-                                             knowledgebase_uuid)}
-
-
-"""
-Document endpoints
-"""
-
-
-@BACKEND.get(Endpoints.GET_DOCUMENTS)
-@access_validator(status=True)
-async def get_documents() -> dict:
-    """
-    Endpoint for getting documents.
+    Endpoint for uploading a document.
+    :param config_id: int: Config ID of KB.
+    :param document_content: Document content.
     :return: Response.
     """
     global CONTROLLER
-    return {"documents": CONTROLLER.get_objects("document")}
-
-
-@BACKEND.get(Endpoints.GET_DOCUMENT)
-@access_validator(status=True)
-async def get_document(document_uuid: str) -> dict:
-    """
-    Endpoint for getting a specific document.
-    :param document_uuid: Document UUID.
-    :return: Response.
-    """
-    global CONTROLLER
-    return {"document": CONTROLLER.get_object("document", document_uuid)}
-
-
-@BACKEND.post(Endpoints.POST_DOCUMENT)
-@access_validator(status=True)
-async def post_document(document: Document) -> dict:
-    """
-    Endpoint for posting a document.
-    :param document: Document.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.post_object("documet",
-                                           **document.dict())}
-
-
-@BACKEND.patch(Endpoints.PATCH_DOCUMENT)
-@access_validator(status=True)
-async def patch_document(document_uuid: str, document: Document) -> dict:
-    """
-    Endpoint for patching a document.
-    :param document_uuid: Document UUID.
-    :param document: Document.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.patch_object("document",
-                                            document_uuid,
-                                            **document.dict())}
+    document_id = CONTROLLER.embed_document(config_id, document_content)
+    return {"document_id": document_id}
 
 
 @BACKEND.delete(Endpoints.DELETE_DOCUMENT)
-@access_validator(status=True)
-async def delete_document(document_uuid: str) -> dict:
+@access_validator()
+async def delete_document(document_id: int) -> dict:
     """
-    Endpoint for deleting a document.
-    :param document_uuid: Document UUID.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.delete_object("document",
-                                             document_uuid)}
-
-
-"""
-Conversation endpoints
-"""
-
-
-@BACKEND.get(Endpoints.GET_CONVERSATIONS)
-@access_validator(status=True)
-async def get_conversations() -> dict:
-    """
-    Endpoint for getting conversations.
+    Endpoint for deleting document.
+    :param document_id: Document ID.
     :return: Response.
     """
     global CONTROLLER
-    return {"conversations": CONTROLLER.get_objects("conversation")}
+    document_id = CONTROLLER.delete_document_embeddings(document_id)
+    return {"document_id": document_id}
 
 
-@BACKEND.get(Endpoints.GET_CONVERSATION)
-@access_validator(status=True)
-async def get_conversation(conversation_uuid: str) -> dict:
+@BACKEND.post(Endpoints.POST_QUERY)
+@access_validator()
+async def post_query(query: str) -> dict:
     """
-    Endpoint for getting a specific conversation.
-    :param conversation_uuid: Conversation UUID.
+    Endpoint for posting query.
+    :param query: Query.
     :return: Response.
     """
     global CONTROLLER
-    return {"conversation": CONTROLLER.get_object("conversation", conversation_uuid)}
-
-
-@BACKEND.post(Endpoints.POST_CONVERSATION)
-@access_validator(status=True)
-async def post_conversation(conversation: Conversation) -> dict:
-    """
-    Endpoint for posting a conversation.
-    :param conversation: Conversation.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.post_object("conversation",
-                                           **conversation.dict())}
-
-
-@BACKEND.patch(Endpoints.PATCH_CONVERSATION)
-@access_validator(status=True)
-async def patch_conversation(conversation_uuid: str, conversation: Conversation) -> dict:
-    """
-    Endpoint for patching a conversation.
-    :param conversation_uuid: Conversation UUID.
-    :param conversation: Conversation.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.patch_object("conversation",
-                                            conversation_uuid,
-                                            **conversation.dict())}
-
-
-@BACKEND.delete(Endpoints.DELETE_CONVERSATION)
-@access_validator(status=True)
-async def delete_conversation(conversation_uuid: str) -> dict:
-    """
-    Endpoint for deleting a conversation.
-    :param conversation_uuid: Conversation UUID.
-    :return: Response.
-    """
-    return {"uuid": CONTROLLER.delete_object("conversation",
-                                             conversation_uuid)}
-
-
-@BACKEND.post(Endpoints.POST_CONVERSATION_QUERY)
-@access_validator(status=True)
-async def post_conversation_query(conversation_uuid: str, query: str) -> dict:
-    """
-    Endpoint for posting a conversation query.
-    :param conversation_uuid: Conversation UUID.
-    :param query: Query to forward.
-    :return: Response.
-    """
-    return {}
-
+    response = CONTROLLER.post_query(query)
+    return {"response": response}
 
 """
 Backend runner

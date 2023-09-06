@@ -1,122 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 ****************************************************
-*                    LLM Tutor                     *
+*          Basic Language Model Backend            *
 *            (c) 2023 Alexander Hering             *
 ****************************************************
 """
 import os
-from uuid import uuid4
-from queue import Queue
-from threading import Thread, Event
+from uuid import UUID
+from time import sleep
+from datetime import datetime as dt
 from typing import Optional, Any, List
 from src.configuration import configuration as cfg
-from src.utility.silver.language_model_utility import spawn_language_model_instance
-from src.model.backend_control.dataclasses import create_or_load_database
-
-
-def run_llm(main_switch: Event, current_switch: Event, llm_configuraiton: dict, input_queue: Queue, output_queue: Queue) -> None:
-    """
-    Function for running LLM instance.
-    :param main_switch: Pool killswitch event.
-    :param current_switch: Sepecific killswitch event.
-    :param llm_configuration: Configuration to instantiate LLM.
-    :param input_queue: Input queue.
-    :param output_queue: Output queue.
-    """
-    llm = spawn_language_model_instance(llm_configuraiton)
-    while not main_switch.wait(0.5) or current_switch(0.5):
-        output_queue.put(llm.handle_query(input_queue.get()))
-
-
-class LLMPool(object):
-    """
-    Controller class for handling LLM instances.
-    """
-
-    def __init__(self, queue_spawns: bool = False) -> None:
-        """
-        Initiation method.
-        :param queue_spawns: Queue up instanciation until resources are available.
-            Defaults to False.
-        """
-        # TODO: Add prioritization and potentially interrupt concept
-        self.queue_spawns = queue_spawns
-        self.main_switch = Event()
-        self.threads = {}
-
-    def kill_all(self) -> None:
-        """
-        Method for killing threads.
-        """
-        self.main_switch.set()
-
-    def kill(self, target_thread: str) -> None:
-        """
-        Method for killing threads.
-        :param target_thread: Thread to kill.
-        """
-        self.threads[target_thread]["switch"].set()
-
-    def validate_resources(self, llm_configuration: dict, queue_spawns: bool) -> bool:
-        """
-        Method for validating resources before LLM instantiation.
-        :param llm_configuration: LLM configuration.
-        :param queue_spawns: Queue up instanciation until resources are available.
-            Defaults to False.
-        :return: True, if resources are available, else False.
-        """
-        # TODO: Implement
-        pass
-
-    def prepare_llm(self, llm_configuration: dict) -> str:
-        """
-        Method for preparing LLM instance.
-        :param llm_configuration: LLM configuration.
-        :return: Thread UUID.
-        """
-        uuid = uuid4()
-        self.threads[uuid] = {
-            "input": Queue(),
-            "output": Queue(),
-            "config": llm_configuration
-        }
-        return uuid
-
-    def load_llm(self, target_thread: str) -> None:
-        """
-        Method for loading LLM.
-        :param target_thread: Thread to start.
-        """
-        self.threads[target_thread]["switch"] = Event()
-        self.threads[target_thread]["thread"] = Thread(
-            target=run_llm,
-            args=(
-                self.main_switch,
-                self.threads[target_thread]["switch"],
-                self.threads[target_thread]["config"],
-                self.threads[target_thread]["input"],
-                self.threads[target_thread]["output"],
-            )
-        ).start()
-
-    def unload_llm(self, target_thread: str) -> None:
-        """
-        Method for unloading LLM.
-        :param target_thread: Thread to stop.
-        """
-        self.threads[target_thread]["switch"].set()
-        self.threads[target_thread]["thread"].join()
-
-    def query(self, target_thread: str, query: str) -> Optional[Any]:
-        """
-        Send query to target LLM.
-        :param target_thread: Target thread.
-        :param query: Query to send.
-        :return: Response.
-        """
-        self.threads[target_thread]["input"].put(query)
-        return self.threads[target_thread]["output"].get()
+from src.utility.gold.filter_mask import FilterMask
+from src.utility.bronze import sqlalchemy_utility
+from src.model.backend_control.data_model import populate_data_instrastructure
+from src.model.backend_control.llm_pool import ThreadedLLMPool
 
 
 class BackendController(object):
@@ -124,29 +22,149 @@ class BackendController(object):
     Controller class for handling backend interface requests.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, working_directory: str = None, database_uri: str = None) -> None:
         """
         Initiation method.
+        :param working_directory: Working directory.
+            Defaults to folder 'processes' folder under standard backend data path.
+        :param database_uri: Database URI.
+            Defaults to 'backend.db' file under default data path.
         """
-        self.working_directory = os.path.join(cfg.PATHS.BACKEND_PATH, "processes"
-                                              )
+        self.working_directory = cfg.PATHS.BACKEND_PATH if working_directory is None else working_directory
         if not os.path.exists(self.working_directory):
             os.makedirs(self.working_directory)
-        self.database_uri = cfg.ENV.get(
-            "BACKEND_DATABASE", f"sqlite:///{self.working_directory}/backend.db")
-        representation = create_or_load_database(self.database_uri)
-        self.base = representation["base"]
-        self.engine = representation["engine"]
-        self.model = representation["model"]
-        self.session_factory = representation["session_factory"]
+
+        self._logger = cfg.LOGGER
+        self._logger.info("Automapping existing structures")
+        self.base = sqlalchemy_utility.automap_base()
+        self.engine = sqlalchemy_utility.get_engine(
+            f"sqlite:///{os.path.join(cfg.PATHS.DATA_PATH), 'backend.db'}" if database_uri is None else database_uri)
+        self.base.prepare(autoload_with=self.engine)
+        self.session_factory = sqlalchemy_utility.get_session_factory(
+            self.engine)
+        self._logger.info("base created with")
+        self._logger.info(f"Classes: {self.base.classes.keys()}")
+        self._logger.info(f"Tables: {self.base.metadata.tables.keys()}")
+
+        self.model = {}
+        self.schema = "backend."
+
+        self._logger.info(
+            f"Generating model tables for website with schema {self.schema}")
+        populate_data_instrastructure(
+            self.engine, self.schema, self.model)
+        self.primary_keys = {
+            object_class: self.model[object_class].__mapper__.primary_key[0].name for object_class in self.model}
+        if self.verbose:
+            self._logger.info(f"Datamodel after addition: {self.model}")
+            for object_class in self.model:
+                self._logger.info(
+                    f"Object type '{object_class}' currently has {self.get_object_count_by_type(object_class)} registered entries.")
+        self._logger.info("Creating new structures")
+        # TODO: Implement database population
+
+        self._cache = {
+            "active": {}
+        }
+        self.llm_pool = ThreadedLLMPool()
 
     def shutdown(self) -> None:
         """
         Method for running shutdown process.
         """
-        pass
+        self.llm_pool.stop_all()
+        while any(self.llm_pool.is_running(instance_uuid) for instance_uuid in self._cache):
+            sleep(2.0)
 
-    def get_objects(self, object_type: str) -> List[Any]:
+    def load_instance(self, instance_uuid: str) -> Optional[str]:
+        """
+        Method for loading a configured language model instance.
+        :param instance_uuid: Instance UUID.
+        :return: Instance UUID if process as successful.
+        """
+        if instance_uuid in self._cache:
+            if not self.llm_pool.is_running(instance_uuid):
+                self.llm_pool.start(instance_uuid)
+                self._cache[instance_uuid]["restarted"] += 1
+        else:
+            self._cache[instance_uuid] = {
+                "started": None,
+                "restarted": 0,
+                "accessed": 0,
+                "inactive": 0
+            }
+            instance = self.get_object("instance", UUID(instance_uuid))
+            llm_config = {
+                "model_path": instance.model.path,
+                "model_config": {
+                    "type": instance.type,
+                    "loader": instance.loader,
+                    "loader_kwargs": instance.loader_kwargs,
+                    "model_version": instance.model_version,
+                    "gateway": instance.gateway
+                }
+            }
+
+            self.llm_pool.prepare_llm(llm_config, instance_uuid)
+            self.llm_pool.start(instance_uuid)
+            self._cache[instance_uuid]["started"] = dt.now()
+        return instance_uuid
+
+    def unload_instance(self, instance_uuid: str) -> Optional[str]:
+        """
+        Method for unloading a configured language model instance.
+        :param instance_uuid: Instance UUID.
+        :return: Instance UUID if process as successful.
+        """
+        if instance_uuid in self._cache:
+            if self.llm_pool.is_running(instance_uuid):
+                self.llm_pool.stop(instance_uuid)
+            return instance_uuid
+        else:
+            return None
+
+    def forward_generate(self, instance_uuid: str, prompt: str) -> Optional[str]:
+        """
+        Method for forwarding a generate request to an instance.
+        :param instance_uuid: Instance UUID.
+        :param prompt: Prompt.
+        :return: Instance UUID.
+        """
+        self.load_instance(instance_uuid)
+        return self.llm_pool.generate(instance_uuid, prompt)
+
+    """
+    Gateway methods
+    """
+
+    def convert_filters(self, entity_type: str, filters: List[FilterMask]) -> list:
+        """
+        Method for coverting common FilterMasks to SQLAlchemy-filter expressions.
+        :param entity_type: Entity type.
+        :param filters: A list of Filtermasks declaring constraints.
+        :return: Filter expressions.
+        """
+        filter_expressions = []
+        for filtermask in filters:
+            filter_expressions.extend([
+                sqlalchemy_utility.SQLALCHEMY_FILTER_CONVERTER[exp[1]](getattr(self.model[entity_type], exp[0]),
+                                                                       exp[2]) for exp in filtermask.expressions])
+        return filter_expressions
+
+    """
+    Default object interaction.
+    """
+
+    def get_object_count_by_type(self, object_type: str) -> int:
+        """
+        Method for acquiring object count.
+        :param object_type: Target object type.
+        :return: Number of objects.
+        """
+        return int(self.engine.connect().execute(sqlalchemy_utility.select(sqlalchemy_utility.func.count()).select_from(
+            self.model[object_type])).scalar())
+
+    def get_objects_by_type(self, object_type: str) -> List[Any]:
         """
         Method for acquiring objects.
         :param object_type: Target object type.
@@ -154,68 +172,134 @@ class BackendController(object):
         """
         return self.session_factory().query(self.model[object_type]).all()
 
-    def get_object(self, object_type: str, object_uuid: str) -> Optional[Any]:
+    def get_object_by_id(self, object_type: str, object_id: Any) -> Optional[Any]:
         """
         Method for acquiring objects.
         :param object_type: Target object type.
-        :param object_uuid: Target UUID.
-        :return: An object of given type and UUID, if found.
+        :param object_id: Target ID.
+        :return: An object of given type and ID, if found.
         """
         return self.session_factory().query(self.model[object_type]).filter(
-            self.model[object_type].uuid == object_uuid
+            getattr(self.model[object_type],
+                    self.primary_keys[object_type]) == object_id
         ).first()
 
-    def post_object(self, object_type: str, **object_attributes: Optional[Any]) -> Optional[str]:
+    def get_objects_by_filtermasks(self, object_type: str, filtermasks: List[FilterMask]) -> List[Any]:
+        """
+        Method for acquiring objects.
+        :param object_type: Target object type.
+        :param filtermasks: Filtermasks.
+        :return: A list of objects, meeting filtermask conditions.
+        """
+        converted_filters = self.convert_filters(object_type, filtermasks)
+        with self.session_factory() as session:
+            result = session.query(self.model[object_type]).filter(sqlalchemy_utility.SQLALCHEMY_FILTER_CONVERTER["or"](
+                *converted_filters)
+            ).all()
+        return result
+
+    def post_object(self, object_type: str, **object_attributes: Optional[Any]) -> Optional[Any]:
         """
         Method for adding an object.
         :param object_type: Target object type.
         :param object_attributes: Object attributes.
-        :return: Object UUID of added object, if adding was successful.
+        :return: Object ID of added object, if adding was successful.
         """
-        if "uuid" not in object_attributes:
-            object_attributes["uuid"] = str(uuid4())
         obj = self.model[object_type](**object_attributes)
         with self.session_factory() as session:
             session.add(obj)
             session.commit()
             session.refresh(obj)
-        return obj.uuid
+        return getattr(obj, self.primary_keys[object_type])
 
-    def patch_object(self, object_type: str, object_uuid: str, **object_attributes: Optional[Any]) -> Optional[str]:
+    def patch_object(self, object_type: str, object_id: Any, **object_attributes: Optional[Any]) -> Optional[Any]:
         """
         Method for patching an object.
         :param object_type: Target object type.
-        :param object_uuid: Target UUID.
+        :param object_id: Target ID.
         :param object_attributes: Object attributes.
-        :return: Object UUID of patched object, if patching was successful.
+        :return: Object ID of patched object, if patching was successful.
         """
         result = None
         with self.session_factory() as session:
             obj = session.query(self.model[object_type]).filter(
-                self.model[object_type].uuid == object_uuid
+                getattr(self.model[object_type],
+                        self.primary_keys[object_type]) == object_id
             ).first()
             if obj:
+                if hasattr(obj, "updated"):
+                    obj.updated = dt.now()
                 for attribute in object_attributes:
                     setattr(obj, attribute, object_attributes[attribute])
+                session.add(obj)
                 session.commit()
-                result = obj.uuid
+                result = getattr(obj, self.primary_keys[object_type])
         return result
 
-    def delete_object(self, object_type: str, object_uuid: str) -> Optional[str]:
+    def delete_object(self, object_type: str, object_id: Any, force: bool = False) -> Optional[Any]:
         """
         Method for deleting an object.
         :param object_type: Target object type.
-        :param object_uuid: Target UUID.
-        :param object_attributes: Object attributes.
-        :return: Object UUID of patched object, if deletion was successful.
+        :param object_id: Target ID.
+        :param force: Force deletion of the object instead of setting inactivity flag.
+        :return: Object ID of deleted object, if deletion was successful.
         """
         result = None
         with self.session_factory() as session:
             obj = session.query(self.model[object_type]).filter(
-                self.model[object_type].uuid == object_uuid
+                getattr(self.model[object_type],
+                        self.primary_keys[object_type]) == object_id
             ).first()
             if obj:
-                obj.delete()
+                if hasattr(obj, "inanctive") and not force:
+                    if hasattr(obj, "updated"):
+                        obj.updated = dt.now()
+                    obj.inactive = True
+                    session.add(obj)
+                else:
+                    session.delete(obj)
                 session.commit()
-                result = obj.uuid
+                result = getattr(obj, self.primary_keys[object_type])
         return result
+
+    """
+    Custom methods
+    """
+
+    def set_active(self, object_type: str, object_id: Any) -> bool:
+        """
+        Method for setting active object.
+        :param object_type: Object type.
+        :param object_id: Object ID.
+        :return: True, if successful else False.
+        """
+        if self.get_object_by_id(object_type, object_id) is not None:
+            self._cache["active"][object_type] = object_id
+            return True
+        else:
+            return False
+
+    def embed_document(self, kb_config_id: int, document_content: str) -> int:
+        """
+        Method for embedding document.
+        :param kb_config_id: KB config ID.
+        :param document_content: Document content.
+        :return: Document ID.
+        """
+        pass
+
+    def delete_document_embeddings(self, document_id: int) -> int:
+        """
+        Method for deleting document embeddings.
+        :param document_id: Document ID.
+        :return: Document ID.
+        """
+        pass
+
+    def post_query(self, query: str) -> dict:
+        """
+        Method for posting query.
+        :param query: Query.
+        :return: Response.
+        """
+        pass
