@@ -28,40 +28,40 @@ class DataModelTest(unittest.TestCase):
         Method for testing basic infrastructure.
         """
         self.assertTrue(os.path.exists(TESTING_DB_PATH))
-        self.assertTrue(all(hasattr(self.database, attribute) for attribute in [
+        self.assertTrue(all(hasattr(self.controller, attribute) for attribute in [
                         "base", "engine", "model", "session_factory", "primary_keys"]))
         self.assertEqual(len(
-            [c for c in self.database.base.metadata.tables[f"{self.schema}llm_config"].columns]), len(self.llm_config_columns))
+            [c for c in self.controller.base.metadata.tables[f"{self.schema}llm_config"].columns]), len(self.llm_config_columns))
         self.assertEqual(len(
-            [c for c in self.database.base.metadata.tables[f"{self.schema}kb_config"].columns]), len(self.kb_config_columns))
+            [c for c in self.controller.base.metadata.tables[f"{self.schema}kb_config"].columns]), len(self.kb_config_columns))
         self.assertEqual(len(
-            [c for c in self.database.base.metadata.tables[f"{self.schema}document"].columns]), len(self.document_columns))
+            [c for c in self.controller.base.metadata.tables[f"{self.schema}document"].columns]), len(self.document_columns))
         self.assertEqual(len(
-            [c for c in self.database.base.metadata.tables[f"{self.schema}log"].columns]), len(self.log_columns))
+            [c for c in self.controller.base.metadata.tables[f"{self.schema}log"].columns]), len(self.log_columns))
 
     def test_02_key_constraints(self) -> None:
         """
         Method for testing key constraints.
         """
         self.assertEqual(
-            list(self.database.base.metadata.tables[f"{self.schema}llm_config"].primary_key.columns)[0].name, "id")
+            list(self.controller.base.metadata.tables[f"{self.schema}llm_config"].primary_key.columns)[0].name, "id")
         self.assertTrue(
-            isinstance(list(self.database.base.metadata.tables[f"{self.schema}llm_config"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
+            isinstance(list(self.controller.base.metadata.tables[f"{self.schema}llm_config"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
         self.assertEqual(
-            list(self.database.base.metadata.tables[f"{self.schema}kb_config"].primary_key.columns)[0].name, "id")
+            list(self.controller.base.metadata.tables[f"{self.schema}kb_config"].primary_key.columns)[0].name, "id")
         self.assertTrue(
-            isinstance(list(self.database.base.metadata.tables[f"{self.schema}kb_config"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
+            isinstance(list(self.controller.base.metadata.tables[f"{self.schema}kb_config"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
         self.assertEqual(
-            list(self.database.base.metadata.tables[f"{self.schema}document"].primary_key.columns)[0].name, "id")
+            list(self.controller.base.metadata.tables[f"{self.schema}document"].primary_key.columns)[0].name, "id")
         self.assertTrue(
-            isinstance(list(self.database.base.metadata.tables[f"{self.schema}document"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
+            isinstance(list(self.controller.base.metadata.tables[f"{self.schema}document"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
         self.assertEqual(
-            list(self.database.base.metadata.tables[f"{self.schema}log"].primary_key.columns)[0].name, "id")
+            list(self.controller.base.metadata.tables[f"{self.schema}log"].primary_key.columns)[0].name, "id")
         self.assertTrue(
-            isinstance(list(self.database.base.metadata.tables[f"{self.schema}log"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
-        self.assertEqual(list(self.database.base.metadata.tables[f"{self.schema}document"].foreign_keys)[
+            isinstance(list(self.controller.base.metadata.tables[f"{self.schema}log"].primary_key.columns)[0].type, sqlalchemy_utility.Integer))
+        self.assertEqual(list(self.controller.base.metadata.tables[f"{self.schema}document"].foreign_keys)[
             0].column.table.name, f"{self.schema}kb_config")
-        self.assertEqual(list(self.database.base.metadata.tables[f"{self.schema}document"].foreign_keys)[
+        self.assertEqual(list(self.controller.base.metadata.tables[f"{self.schema}document"].foreign_keys)[
             0].target_fullname, f"{self.schema}kb_config.id")
 
     def test_03_model_key_representation(self) -> None:
@@ -69,7 +69,7 @@ class DataModelTest(unittest.TestCase):
         Method for testing model representation.
         """
         primary_keys = {
-            object_class: self.database.model[object_class].__mapper__.primary_key[0].name for object_class in self.database.model}
+            object_class: self.controller.model[object_class].__mapper__.primary_key[0].name for object_class in self.controller.model}
         self.assertEqual(primary_keys["llm_config"], "id")
         self.assertEqual(primary_keys["kb_config"], "id")
         self.assertEqual(primary_keys["document"], "id")
@@ -79,41 +79,41 @@ class DataModelTest(unittest.TestCase):
         """
         Method for testing model representation.
         """
-        kb_config = self.database.model["kb_config"](
+        kb_config = self.controller.model["kb_config"](
             **self.example_kb_config_data
         )
         self.assertTrue(all(hasattr(kb_config, attribute)
                         for attribute in self.kb_config_columns))
 
-        document = self.database.model["document"](
+        document = self.controller.model["document"](
             **self.example_document_data
         )
         self.assertTrue(all(hasattr(document, attribute)
                         for attribute in self.document_columns))
 
-        log = self.database.model["log"](
+        log = self.controller.model["log"](
             **self.example_log_data
         )
         self.assertTrue(all(hasattr(log, attribute)
                         for attribute in self.log_columns))
 
         kb_config_id = None
-        with self.database.session_factory() as session:
+        with self.controller.session_factory() as session:
             session.add(kb_config)
             session.commit()
             kb_config_id = kb_config.id
         self.assertFalse(kb_config_id is None)
 
-        with self.database.session_factory() as session:
-            resulting_kb_config = session.query(self.database.model["kb_config"]).filter(
-                getattr(self.database.model["kb_config"], "id") == kb_config_id).first()
+        with self.controller.session_factory() as session:
+            resulting_kb_config = session.query(self.controller.model["kb_config"]).filter(
+                getattr(self.controller.model["kb_config"], "id") == kb_config_id).first()
         self.assertFalse(resulting_kb_config is None)
 
         self.assertTrue(isinstance(resulting_kb_config.created,
                         datetime))
-        with self.database.session_factory() as session:
-            resulting_kb_config = session.query(self.database.model["kb_config"]).filter(
-                getattr(self.database.model["kb_config"], "id") == kb_config_id).first()
+        with self.controller.session_factory() as session:
+            resulting_kb_config = session.query(self.controller.model["kb_config"]).filter(
+                getattr(self.controller.model["kb_config"], "id") == kb_config_id).first()
             resulting_kb_config.config = {"new_key": "new_val"}
             session.commit()
             session.refresh(resulting_kb_config)
@@ -121,15 +121,15 @@ class DataModelTest(unittest.TestCase):
                          str({"new_key": "new_val"}))
 
         document.kb_config_id = kb_config_id
-        with self.database.session_factory() as session:
+        with self.controller.session_factory() as session:
             session.add(document)
             session.commit()
             session.refresh(document)
-            resulting_kb_config = session.query(self.database.model["kb_config"]).filter(
-                getattr(self.database.model["kb_config"], "id") == kb_config_id).first()
+            resulting_kb_config = session.query(self.controller.model["kb_config"]).filter(
+                getattr(self.controller.model["kb_config"], "id") == kb_config_id).first()
             self.assertEqual(document.kb_config_id, resulting_kb_config.id)
             self.assertTrue(isinstance(
-                document.kb_config, self.database.model["kb_config"]))
+                document.kb_config, self.controller.model["kb_config"]))
 
     @classmethod
     def setUpClass(cls):
@@ -138,9 +138,9 @@ class DataModelTest(unittest.TestCase):
         """
         if not os.path.exists(f"{cfg.PATHS.TEST_PATH}/DataModelTest"):
             os.makedirs(f"{cfg.PATHS.TEST_PATH}/DataModelTest")
-        cls.schema = "test."
-        cls.database = BackendController(
+        cls.controller = BackendController(
             database_uri=f"sqlite:///{TESTING_DB_PATH}")
+        cls.schema = cls.controller.schema
 
         cls.example_llm_config_data = {
             "config": {"key": "val"}
@@ -158,7 +158,7 @@ class DataModelTest(unittest.TestCase):
         cls.kb_config_columns = ["id", "config",
                                  "created", "updated", "inactive"]
         cls.document_columns = ["id", "content", "created",
-                                "updated", "inactive", "kb_cnfig_id"]
+                                "updated", "inactive", "kb_config_id"]
         cls.log_columns = ["id", "request",
                            "response", "requested", "responded"]
 
@@ -167,7 +167,7 @@ class DataModelTest(unittest.TestCase):
         """
         Class method for setting tearing down test case.
         """
-        del cls.database
+        del cls.controller
         del cls.schema
         del cls.example_llm_config_data
         del cls.example_kb_config_data
