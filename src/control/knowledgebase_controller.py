@@ -60,14 +60,15 @@ class KnowledgeBaseController(object):
         )
         return name
 
-    def delete_document(self, kb: str, document_id: Any, collection: str = "base") -> None:
+    def delete_documents(self, kb: str, document_ids: List[Any], collection: str = "base") -> None:
         """
         Method for deleting a document from the knowledgebase.
         :param kb: Target knowledgebase.
-        :param document_id: Document ID.
+        :param document_ids: Document IDs.
         :param collection: Collection to remove document from.
         """
-        self.kbs[kb].delete_document(document_id, collection)
+        for document_id in document_ids:
+            self.kbs[kb].delete_document(document_id, collection)
 
     def wipe_knowledgebase(self, target_kb: str) -> None:
         """
