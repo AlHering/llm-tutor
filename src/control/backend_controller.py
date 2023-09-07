@@ -14,6 +14,7 @@ from src.configuration import configuration as cfg
 from src.utility.gold.filter_mask import FilterMask
 from src.utility.bronze import sqlalchemy_utility
 from src.control.knowledgebase_controller import KnowledgeBaseController
+from src.utility.bronze.hashing_utility import hash_text_with_sha256
 from src.model.backend_control.data_model import populate_data_instrastructure
 from src.model.backend_control.llm_pool import ThreadedLLMPool
 
@@ -324,7 +325,21 @@ class BackendController(object):
         :param document_content: Document content.
         :return: Document ID.
         """
-        pass
+        kb_config = self.get_object_by_id("kb_config", kb_config_id)
+        doc_id = self.post_object("document", {
+            "content": document_content,
+            "kb_config_id": kb_config.id
+        })
+        self.kb_controller.embed_documents(
+            kb_config["name"], documents=[document_content],
+            metadatas=[{
+                "hash": hash_text_with_sha256(document_content),
+                "kb_id": kb_config.id,
+                "kb_name": kb_config.config["name"]
+            }],
+            ids=[str(doc_id)]
+        )
+        return doc_id
 
     def delete_document_embeddings(self, document_id: int) -> int:
         """
