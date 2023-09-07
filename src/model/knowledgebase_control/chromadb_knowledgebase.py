@@ -89,6 +89,6 @@ class ChromaKnowledgeBase(KnowledgeBase):
         :param ids: Custom IDs to add. 
             Defaults to the hash of the document contents.
         """
-        self.collections[name].add_documents(documents=documents, metadatas=metadatas ids=[
+        self.collections[name].add_documents(documents=documents, metadatas=metadatas, ids=[
             hash_text_with_sha256(document.page_content) for document in documents] if ids is None else ids)
         self.collections[name].persist()
