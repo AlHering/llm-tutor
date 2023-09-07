@@ -7,7 +7,7 @@
 """
 import os
 import abc
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Optional
 from chromadb.api.types import EmbeddingFunction, Embeddings, Documents
 from langchain.docstore.document import Document
 from langchain.vectorstores.base import VectorStoreRetriever
@@ -54,18 +54,16 @@ class KnowledgeBase(abc.ABC):
         """
         pass
 
-    @abc.abstractmethod
-    def embed_documents(self, collection: str, documents: List[Document], metadatas: List[dict] = None, ids: List[str] = None) -> None:
+    def compute_metadata(self, kb: str, doc_content: str, collection: str = "base", **kwargs: Optional[Any]) -> dict:
         """
-        Method for embedding documents.
-        :param collection: Collection to use.
-        :param documents: Documents to embed.
-        :param metadatas: Metadata entries.
-            Defaults to None.
-        :param ids: Custom IDs to add. 
-            Defaults to the hash of the document contents.
+        Method for computing metadata from content.
+        :param kb: Target knowledgebase.
+        :param doc_content: Document content.
+        :param collection: Target collection.
+            Defaults to "base".
+        :param kwargs: Arbitary keyword arguments.
         """
-        pass
+        return {}
 
     def load_folder(self, folder: str, target_collection: str = "base", splitting: Tuple[int] = None) -> None:
         """
