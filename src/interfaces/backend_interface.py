@@ -156,6 +156,7 @@ async def post_kb_config(payload: dict) -> dict:
     """
     global CONTROLLER
     config_id = CONTROLLER.post_object("kb_config", config=payload)
+    CONTROLLER.kb_controller.register_knowledgebase(payload)
     return {"config_id": config_id}
 
 
@@ -168,7 +169,9 @@ async def delete_kb_config(config_id: int) -> dict:
     :return: Response.
     """
     global CONTROLLER
+    config = CONTROLLER.get_object_by_id("kb_config", config_id)
     config_id = CONTROLLER.delete_object("kb_config", config_id)
+    CONTROLLER.kb_controller.wipe_knowledgebase(config["name"])
     return {"config_id": config_id}
 
 
