@@ -79,18 +79,27 @@ class ChromaKnowledgeBase(KnowledgeBase):
         )
 
     # Override
-    def embed_documents(self, collection: str, documents: List[Document], metadatas: List[dict] = None, ids: List[str] = None, compute_metadata: bool = False) -> None:
+    def embed_documents(self, documents: List[Document], metadatas: List[dict] = None, ids: List[str] = None, collection: str = "base", compute_metadata: bool = False) -> None:
         """
         Method for embedding documents.
-        :param collection: Collection to use.
         :param documents: Documents to embed.
         :param metadatas: Metadata entries. 
             Defaults to None.
         :param ids: Custom IDs to add. 
             Defaults to the hash of the document contents.
+        :param collection: Collection to use.
+            Defaults to "base".
         :param compute_metadata: Flag for declaring, whether to compute metadata.
             Defaults to False.
         """
+        if metadatas is None:
+            metadatas = [{} for _ in documents]
+        if compute_metadata:
+            for doc_index, doc_content in enumerate(documents):
+                metadatas[doc_index] = metadatas[doc_index].update(
+                    self.compute_metadata(doc_content, collection))
+
         self.collections[collection].add_documents(documents=documents, metadatas=metadatas, ids=[
             hash_text_with_sha256(document.page_content) for document in documents] if ids is None else ids)
+
         self.collections[collection].persist()
