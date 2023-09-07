@@ -14,11 +14,11 @@ from langchain.vectorstores import Chroma
 from langchain.vectorstores.base import VectorStoreRetriever
 from src.configuration import configuration as cfg
 from src.utility.bronze.hashing_utility import hash_text_with_sha256
-from src.model.knowledgebase_control.abstract_knowledgebase_controller import KnowledgeBaseController
+from src.model.knowledgebase_control.abstract_knowledgebase import KnowledgeBase
 from src.utility.silver import embedding_utility
 
 
-class ChromaKnowledgeBase(KnowledgeBaseController):
+class ChromaKnowledgeBase(KnowledgeBase):
     """
     Class for handling knowledge base interaction with ChromaDB.
     """
@@ -39,7 +39,7 @@ class ChromaKnowledgeBase(KnowledgeBaseController):
         self.client_settings = Settings(persist_directory=peristant_directory,
                                         chroma_db_impl='duckdb+parquet')
 
-        self.databases = {}
+        self.collections = {}
         self.base_chromadb = self.get_or_create_collection("base")
 
     # Override
@@ -51,15 +51,15 @@ class ChromaKnowledgeBase(KnowledgeBaseController):
         :param embedding_function: Embedding function for the collection. Defaults to base embedding function.
         :return: Database API.
         """
-        if name not in self.databases:
-            self.databases[name] = Chroma(
+        if name not in self.collections:
+            self.collections[name] = Chroma(
                 persist_directory=self.peristant_directory,
                 embedding_function=self.base_embedding_function if embedding_function is None else embedding_function,
                 collection_name=name,
                 collection_metadata=metadata,
                 client_settings=self.client_settings
             )
-        return self.databases[name]
+        return self.collections[name]
 
     # Override
     def get_retriever(self, name: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
@@ -70,7 +70,7 @@ class ChromaKnowledgeBase(KnowledgeBaseController):
         :param search_kwargs: The retrievery search keyword arguments. Defaults to {"k": 4, "include_metadata": True}.
         :return: Retriever instance.
         """
-        db = self.databases.get(name, self.databases["base"])
+        db = self.collections.get(name, self.collections["base"])
         search_kwargs["k"] = min(
             search_kwargs["k"], len(db.get()["ids"]))
         return db.as_retriever(
@@ -85,6 +85,6 @@ class ChromaKnowledgeBase(KnowledgeBaseController):
         :param documents: Documents to embed.
         :param ids: Custom IDs to add. Defaults to the hash of the document contents.
         """
-        self.databases[name].add_documents(documents=documents, ids=[
+        self.collections[name].add_documents(documents=documents, ids=[
             hash_text_with_sha256(document.page_content) for document in documents] if ids is None else ids)
-        self.databases[name].persist()
+        self.collections[name].persist()

@@ -27,7 +27,7 @@ def reload_document(document_path: str) -> Document:
     return res[0] if isinstance(res, list) and len(res) == 1 else res
 
 
-class KnowledgeBaseController(abc.ABC):
+class KnowledgeBase(abc.ABC):
     """
     Abdstract class for knowledge base controllers.
     """
