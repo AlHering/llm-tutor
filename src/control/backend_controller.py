@@ -353,7 +353,11 @@ class BackendController(object):
         :param document_id: Document ID.
         :return: Document ID.
         """
-        pass
+        doc = self.get_object_by_id("document", document_id)
+        self.kb_controller.delete_documents(
+            doc.kb_config.config["name"],
+            [str(doc.id)]
+        )
 
     def post_query(self, query: str) -> dict:
         """
