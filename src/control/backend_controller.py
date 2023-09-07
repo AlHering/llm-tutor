@@ -13,6 +13,7 @@ from typing import Optional, Any, List
 from src.configuration import configuration as cfg
 from src.utility.gold.filter_mask import FilterMask
 from src.utility.bronze import sqlalchemy_utility
+from src.control.knowledgebase_controller import KnowledgeBaseController
 from src.model.backend_control.data_model import populate_data_instrastructure
 from src.model.backend_control.llm_pool import ThreadedLLMPool
 
@@ -30,11 +31,46 @@ class BackendController(object):
         :param database_uri: Database URI.
             Defaults to 'backend.db' file under default data path.
         """
+        # Main instance variables
+        self._logger = cfg.LOGGER
         self.working_directory = cfg.PATHS.BACKEND_PATH if working_directory is None else working_directory
         if not os.path.exists(self.working_directory):
             os.makedirs(self.working_directory)
+        self.database_uri = database_uri
 
-        self._logger = cfg.LOGGER
+        # Database infrastructure
+        self.base = None
+        self.engine = None
+        self.model = None
+        self.schema = None
+        self.session_factory = None
+        self.primary_keys = None
+        self._setup_database()
+
+        # Knowledgebase infrastructure
+        self.kb_controller = KnowledgeBaseController(
+            working_directory=os.path.join(
+                self.working_directory, "knowledgebases"),
+            kb_configs=[
+                entry.config for entry in self.get_objects_by_type("kb_config")]
+        )
+
+        # LLM infrastructure
+        self.llm_pool = ThreadedLLMPool()
+
+        # Cache
+        self._cache = {
+            "active": {}
+        }
+
+    """
+    Setup and population methods
+    """
+
+    def _setup_database(self) -> None:
+        """
+        Internal method for setting up database infastructure.
+        """
         self._logger.info("Automapping existing structures")
         self.base = sqlalchemy_utility.automap_base()
         self.engine = sqlalchemy_utility.get_engine(
@@ -61,13 +97,10 @@ class BackendController(object):
         for object_class in self.model:
             self._logger.info(
                 f"Object type '{object_class}' currently has {self.get_object_count_by_type(object_class)} registered entries.")
-        self._logger.info("Creating new structures")
-        # TODO: Implement database population
 
-        self._cache = {
-            "active": {}
-        }
-        self.llm_pool = ThreadedLLMPool()
+    """
+    Exit and shutdown methods
+    """
 
     def shutdown(self) -> None:
         """
@@ -76,6 +109,10 @@ class BackendController(object):
         self.llm_pool.stop_all()
         while any(self.llm_pool.is_running(instance_uuid) for instance_uuid in self._cache):
             sleep(2.0)
+
+    """
+    LLM Handling methods
+    """
 
     def load_instance(self, instance_uuid: str) -> Optional[str]:
         """
