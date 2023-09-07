@@ -11,7 +11,7 @@ from time import sleep
 from datetime import datetime as dt
 from typing import Optional, Any, List, Dict
 from src.configuration import configuration as cfg
-from src.utility.gold.filter_mask import FilterMask
+from src.utility.gold.basic_sqlalchemy_interface import BasicSQLAlchemyInterface
 from src.utility.bronze import sqlalchemy_utility
 from src.utility.bronze.hashing_utility import hash_text_with_sha256
 from src.model.backend_control.data_model import populate_data_instrastructure
@@ -22,7 +22,7 @@ from src.utility.silver.file_system_utility import safely_create_path
 from src.model.knowledgebase_control.chromadb_knowledgebase import ChromaKnowledgeBase, KnowledgeBase
 
 
-class BackendController(object):
+class BackendController(BasicSQLAlchemyInterface):
     """
     Controller class for handling backend interface requests.
     """
@@ -40,9 +40,11 @@ class BackendController(object):
         self.working_directory = cfg.PATHS.BACKEND_PATH if working_directory is None else working_directory
         if not os.path.exists(self.working_directory):
             os.makedirs(self.working_directory)
-        self.database_uri = database_uri
+        self.database_uri = f"sqlite:///{os.path.join(cfg.PATHS.DATA_PATH, 'backend.db')}" if database_uri is None else database_uri
 
         # Database infrastructure
+        super().__init__(self.working_directory, self.database_uri,
+                         populate_data_instrastructure, self._logger)
         self.base = None
         self.engine = None
         self.model = None
@@ -259,135 +261,6 @@ class BackendController(object):
 
         self.kbs[kb].embed_documents(
             collection=collection, documents=documents, metadatas=metadatas, ids=hashes if ids is None else ids)
-
-    """
-    Gateway methods
-    """
-
-    def convert_filters(self, entity_type: str, filters: List[FilterMask]) -> list:
-        """
-        Method for coverting common FilterMasks to SQLAlchemy-filter expressions.
-        :param entity_type: Entity type.
-        :param filters: A list of Filtermasks declaring constraints.
-        :return: Filter expressions.
-        """
-        filter_expressions = []
-        for filtermask in filters:
-            filter_expressions.extend([
-                sqlalchemy_utility.SQLALCHEMY_FILTER_CONVERTER[exp[1]](getattr(self.model[entity_type], exp[0]),
-                                                                       exp[2]) for exp in filtermask.expressions])
-        return filter_expressions
-
-    """
-    Default object interaction.
-    """
-
-    def get_object_count_by_type(self, object_type: str) -> int:
-        """
-        Method for acquiring object count.
-        :param object_type: Target object type.
-        :return: Number of objects.
-        """
-        return int(self.engine.connect().execute(sqlalchemy_utility.select(sqlalchemy_utility.func.count()).select_from(
-            self.model[object_type])).scalar())
-
-    def get_objects_by_type(self, object_type: str) -> List[Any]:
-        """
-        Method for acquiring objects.
-        :param object_type: Target object type.
-        :return: List of objects of given type.
-        """
-        return self.session_factory().query(self.model[object_type]).all()
-
-    def get_object_by_id(self, object_type: str, object_id: Any) -> Optional[Any]:
-        """
-        Method for acquiring objects.
-        :param object_type: Target object type.
-        :param object_id: Target ID.
-        :return: An object of given type and ID, if found.
-        """
-        return self.session_factory().query(self.model[object_type]).filter(
-            getattr(self.model[object_type],
-                    self.primary_keys[object_type]) == object_id
-        ).first()
-
-    def get_objects_by_filtermasks(self, object_type: str, filtermasks: List[FilterMask]) -> List[Any]:
-        """
-        Method for acquiring objects.
-        :param object_type: Target object type.
-        :param filtermasks: Filtermasks.
-        :return: A list of objects, meeting filtermask conditions.
-        """
-        converted_filters = self.convert_filters(object_type, filtermasks)
-        with self.session_factory() as session:
-            result = session.query(self.model[object_type]).filter(sqlalchemy_utility.SQLALCHEMY_FILTER_CONVERTER["or"](
-                *converted_filters)
-            ).all()
-        return result
-
-    def post_object(self, object_type: str, **object_attributes: Optional[Any]) -> Optional[Any]:
-        """
-        Method for adding an object.
-        :param object_type: Target object type.
-        :param object_attributes: Object attributes.
-        :return: Object ID of added object, if adding was successful.
-        """
-        obj = self.model[object_type](**object_attributes)
-        with self.session_factory() as session:
-            session.add(obj)
-            session.commit()
-            session.refresh(obj)
-        return getattr(obj, self.primary_keys[object_type])
-
-    def patch_object(self, object_type: str, object_id: Any, **object_attributes: Optional[Any]) -> Optional[Any]:
-        """
-        Method for patching an object.
-        :param object_type: Target object type.
-        :param object_id: Target ID.
-        :param object_attributes: Object attributes.
-        :return: Object ID of patched object, if patching was successful.
-        """
-        result = None
-        with self.session_factory() as session:
-            obj = session.query(self.model[object_type]).filter(
-                getattr(self.model[object_type],
-                        self.primary_keys[object_type]) == object_id
-            ).first()
-            if obj:
-                if hasattr(obj, "updated"):
-                    obj.updated = dt.now()
-                for attribute in object_attributes:
-                    setattr(obj, attribute, object_attributes[attribute])
-                session.add(obj)
-                session.commit()
-                result = getattr(obj, self.primary_keys[object_type])
-        return result
-
-    def delete_object(self, object_type: str, object_id: Any, force: bool = False) -> Optional[Any]:
-        """
-        Method for deleting an object.
-        :param object_type: Target object type.
-        :param object_id: Target ID.
-        :param force: Force deletion of the object instead of setting inactivity flag.
-        :return: Object ID of deleted object, if deletion was successful.
-        """
-        result = None
-        with self.session_factory() as session:
-            obj = session.query(self.model[object_type]).filter(
-                getattr(self.model[object_type],
-                        self.primary_keys[object_type]) == object_id
-            ).first()
-            if obj:
-                if hasattr(obj, "inanctive") and not force:
-                    if hasattr(obj, "updated"):
-                        obj.updated = dt.now()
-                    obj.inactive = True
-                    session.add(obj)
-                else:
-                    session.delete(obj)
-                session.commit()
-                result = getattr(obj, self.primary_keys[object_type])
-        return result
 
     """
     Custom methods
