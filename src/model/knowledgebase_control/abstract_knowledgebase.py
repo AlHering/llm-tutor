@@ -33,10 +33,10 @@ class KnowledgeBase(abc.ABC):
     """
 
     @abc.abstractmethod
-    def get_or_create_collection(self, name: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Any:
+    def get_or_create_collection(self, collection: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Any:
         """
         Method for retrieving or creating a collection.
-        :param name: Collection name.
+        :param collection: Collection collection.
         :param metadata: Embedding collection metadata. Defaults to None.
         :param embedding_function: Embedding function for the collection. Defaults to base embedding function.
         :return: Database API.
@@ -44,10 +44,10 @@ class KnowledgeBase(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_retriever(self, name: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
+    def get_retriever(self, collection: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
         """
         Method for acquiring a retriever.
-        :param name: Collection to use.
+        :param collection: Collection to use.
         :param search_type: The retriever's search type. Defaults to "similarity".
         :param search_kwargs: The retrievery search keyword arguments. Defaults to {"k": 4, "include_metadata": True}.
         :return: Retriever instance.
@@ -55,10 +55,10 @@ class KnowledgeBase(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def embed_documents(self, name: str, documents: List[Document], ids: List[str] = None) -> None:
+    def embed_documents(self, collection: str, documents: List[Document], ids: List[str] = None) -> None:
         """
         Method for embedding documents.
-        :param name: Collection to use.
+        :param collection: Collection to use.
         :param documents: Documents to embed.
         :param ids: Custom IDs to add. Defaults to the hash of the document contents.
         """
