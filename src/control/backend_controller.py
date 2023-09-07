@@ -74,7 +74,7 @@ class BackendController(object):
         self._logger.info("Automapping existing structures")
         self.base = sqlalchemy_utility.automap_base()
         self.engine = sqlalchemy_utility.get_engine(
-            f"sqlite:///{os.path.join(cfg.PATHS.DATA_PATH, 'backend.db')}" if database_uri is None else database_uri)
+            f"sqlite:///{os.path.join(cfg.PATHS.DATA_PATH, 'backend.db')}" if self.database_uri is None else self.database_uri)
 
         self.model = {}
         self.schema = "backend."
