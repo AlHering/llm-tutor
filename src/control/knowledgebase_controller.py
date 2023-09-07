@@ -9,6 +9,8 @@ import os
 from typing import Any, List
 import copy
 from src.configuration import configuration as cfg
+from uuid import uuid4
+from src.utility.silver import embedding_utility
 from src.utility.bronze.hashing_utility import hash_text_with_sha256
 from src.utility.silver.file_system_utility import safely_create_path
 from src.model.knowledgebase_control.chromadb_knowledgebase import ChromaKnowledgeBase
@@ -19,14 +21,21 @@ class KnowledgeBaseController(object):
     Class, representing a knowledgebase controller.
     """
 
-    def __init__(self, document_directory: str, kb_configs: List[dict]) -> None:
+    def __init__(self, working_directory: str, kb_configs: List[dict], default_embedding_function: Any = None) -> None:
         """
         Initiation method.
-        :param document_directory: Directory to store documents.
+        :param working_directory: Working directory.
         :param kb_configs: List of knowledgebase configs for initiation.
+        :param default_embedding_function: Default embedding function.
+            Defaults to None in which case current utility default is used.
         """
-        self.document_directory = document_directory
+        self.working_directory = working_directory
+        self.document_directory = os.path.join(
+            self.working_directory, "library")
         safely_create_path(self.document_directory)
+        self.default_embedding_function = embedding_utility.LocalHuggingFaceEmbeddings(
+            cfg.PATHS.INSTRUCT_XL_PATH
+        )
         self.kbs = {}
         self.documents = {}
         for kb_config in kb_configs:
@@ -37,7 +46,17 @@ class KnowledgeBaseController(object):
         Method for registering knowledgebase.
         :param config: Knowledgebase config.
         """
-        pass
+        name = config.get("name", uuid4())
+        handler = config.get("handler", "chromadb")
+        handler_kwargs = config.get("handler_kwargs", {
+            "peristant_directory": os.path.join(self.working_directory, name),
+            "base_embedding_function": self.default_embedding_function,
+            "implementation": "duckdb+parquet"}
+        )
+
+        self.kbs[name] = {"chromadb": ChromaKnowledgeBase}[handler](
+            **handler_kwargs
+        )
 
     def migrate_knowledgebase(self, source_kb: str, target_kb: str) -> None:
         """
