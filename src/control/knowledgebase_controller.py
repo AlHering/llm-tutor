@@ -6,14 +6,14 @@
 ****************************************************
 """
 import os
-from typing import Any, List
+from typing import Any, List, Dict
 import copy
 from src.configuration import configuration as cfg
 from uuid import uuid4
 from src.utility.silver import embedding_utility
 from src.utility.bronze.hashing_utility import hash_text_with_sha256
 from src.utility.silver.file_system_utility import safely_create_path
-from src.model.knowledgebase_control.chromadb_knowledgebase import ChromaKnowledgeBase
+from src.model.knowledgebase_control.chromadb_knowledgebase import ChromaKnowledgeBase, KnowledgeBase
 
 
 class KnowledgeBaseController(object):
@@ -36,7 +36,7 @@ class KnowledgeBaseController(object):
         self.default_embedding_function = embedding_utility.LocalHuggingFaceEmbeddings(
             cfg.PATHS.INSTRUCT_XL_PATH
         )
-        self.kbs = {}
+        self.kbs: Dict[str, KnowledgeBase] = {}
         self.documents = {}
         for kb_config in kb_configs:
             self.register_knowledgebase(kb_config)
@@ -60,13 +60,21 @@ class KnowledgeBaseController(object):
         )
         return name
 
+    def delete_document(self, kb: str, document_id: Any, collection: str = "base") -> None:
+        """
+        Method for deleting a document from the knowledgebase.
+        :param kb: Target knowledgebase.
+        :param document_id: Document ID.
+        :param collection: Collection to remove document from.
+        """
+        self.kbs[kb].delete_document(document_id, collection)
+
     def wipe_knowledgebase(self, target_kb: str) -> None:
         """
         Method for wiping a knowledgebase.
         :param target_kb: Target knowledgebase.
         """
-        self.kbs[target_kb].wipe()
-        self.pop(target_kb)
+        self.kbs[target_kb].wipe_knowledgebase()
 
     def migrate_knowledgebase(self, source_kb: str, target_kb: str) -> None:
         """
