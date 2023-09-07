@@ -54,6 +54,22 @@ class KnowledgeBase(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def embed_documents(self, documents: List[Document], metadatas: List[dict] = None, ids: List[str] = None, collection: str = "base", compute_metadata: bool = False) -> None:
+        """
+        Method for embedding documents.
+        :param documents: Documents to embed.
+        :param metadatas: Metadata entries. 
+            Defaults to None.
+        :param ids: Custom IDs to add. 
+            Defaults to the hash of the document contents.
+        :param collection: Collection to use.
+            Defaults to "base".
+        :param compute_metadata: Flag for declaring, whether to compute metadata.
+            Defaults to False.
+        """
+        pass
+
     def compute_metadata(self, doc_content: str, collection: str = "base", **kwargs: Optional[Any]) -> dict:
         """
         Method for computing metadata from content.
@@ -64,12 +80,14 @@ class KnowledgeBase(abc.ABC):
         """
         return {}
 
-    def load_folder(self, folder: str, target_collection: str = "base", splitting: Tuple[int] = None) -> None:
+    def load_folder(self, folder: str, target_collection: str = "base", splitting: Tuple[int] = None, compute_metadata: bool = False) -> None:
         """
         Method for (re)loading folder contents.
         :param folder: Folder path.
         :param target_collection: Collection to handle folder contents. Defaults to "base".
         :param splitting: A tuple of chunk size and overlap for splitting. Defaults to None in which case the documents are not split.
+        :param compute_metadata: Flag for declaring, whether to compute metadata.
+            Defaults to False.
         """
         file_paths = []
         for root, dirs, files in os.walk(folder, topdown=True):
@@ -77,12 +95,14 @@ class KnowledgeBase(abc.ABC):
 
         self.load_files(file_paths, target_collection, splitting)
 
-    def load_files(self, file_paths: List[str], target_collection: str = "base", splitting: Tuple[int] = None) -> None:
+    def load_files(self, file_paths: List[str], target_collection: str = "base", splitting: Tuple[int] = None, compute_metadata: bool = False) -> None:
         """
         Method for (re)loading file paths.
         :param file_paths: List of file paths.
         :param target_collection: Collection to handle folder contents. Defaults to "base".
         :param splitting: A tuple of chunk size and overlap for splitting. Defaults to None in which case the documents are not split.
+        :param compute_metadata: Flag for declaring, whether to compute metadata.
+            Defaults to False.
         """
         document_paths = [file for file in file_paths if any(file.lower().endswith(
             supported_extension) for supported_extension in langchain_utility.DOCUMENT_LOADERS)]
