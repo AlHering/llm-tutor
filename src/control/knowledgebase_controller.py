@@ -76,7 +76,7 @@ class KnowledgeBaseController(object):
         """
         pass
 
-    def embed_documents(self, kb: str, documents: List[str], metadatas: List[dict] = None, ids: List[str] = None, collection: str = "base", compute_metadata: bool = False) -> None:
+    def embed_documents(self, kb: str, documents: List[str], metadatas: List[dict] = None, ids: List[str] = None, hashes: List[str] = None, collection: str = "base", compute_metadata: bool = False) -> None:
         """
         Method for embedding documents.
         :param kb: Target knowledgebase.
@@ -85,13 +85,15 @@ class KnowledgeBaseController(object):
             Defaults to None.
         :param ids: Custom IDs to add. 
             Defaults to the hash of the document contents.
+        :param hashes: Content hashes.
+            Defaults to None in which case hashes are computet.
         :param collection: Target collection.
             Defaults to "base".
         :param compute_metadata: Flag for declaring, whether to compute metadata.
             Defaults to False.
         """
         hashes = [hash_text_with_sha256(document.page_content)
-                  for document in documents]
+                  for document in documents] if hashes is None else hashes
         for doc_index, hash in enumerate(hashes):
             if hash not in self.documents:
                 path = os.path.join(self.document_directory, f"{hash}.bin")

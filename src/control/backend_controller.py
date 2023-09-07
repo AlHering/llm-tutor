@@ -318,11 +318,13 @@ class BackendController(object):
         else:
             return False
 
-    def embed_document(self, kb_config_id: int, document_content: str) -> int:
+    def embed_document(self, kb_config_id: int, document_content: str, document_metadata: dict = None) -> int:
         """
         Method for embedding document.
         :param kb_config_id: KB config ID.
         :param document_content: Document content.
+        :param document_metadata: Document metadata.
+            Defaults to None
         :return: Document ID.
         """
         kb_config = self.get_object_by_id("kb_config", kb_config_id)
@@ -330,14 +332,18 @@ class BackendController(object):
             "content": document_content,
             "kb_config_id": kb_config.id
         })
+        document_metadata = {} if document_metadata is None else document_metadata
+        document_metadata.update({
+            "hash": hash_text_with_sha256(document_content),
+            "kb_id": kb_config.id,
+            "kb_name": kb_config.config["name"]
+        })
+
         self.kb_controller.embed_documents(
             kb_config["name"], documents=[document_content],
-            metadatas=[{
-                "hash": hash_text_with_sha256(document_content),
-                "kb_id": kb_config.id,
-                "kb_name": kb_config.config["name"]
-            }],
+            metadatas=[document_metadata],
             ids=[str(doc_id)]
+            hashes=[document_metadata["hash"]]
         )
         return doc_id
 

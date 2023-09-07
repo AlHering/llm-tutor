@@ -177,11 +177,12 @@ async def delete_kb_config(config_id: int) -> dict:
 
 @BACKEND.post(Endpoints.UPLOAD_DOCUMENT)
 @access_validator()
-async def upload_document(config_id: int, document_content: str) -> dict:
+async def upload_document(config_id: int, document_content: str, document_metadata: dict = None) -> dict:
     """
     Endpoint for uploading a document.
     :param config_id: int: Config ID of KB.
     :param document_content: Document content.
+    :param document_metadata: Document metadata.
     :return: Response.
     """
     global CONTROLLER
