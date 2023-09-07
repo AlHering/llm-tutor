@@ -342,7 +342,7 @@ class BackendController(object):
         self.kb_controller.embed_documents(
             kb_config["name"], documents=[document_content],
             metadatas=[document_metadata],
-            ids=[str(doc_id)]
+            ids=[str(doc_id)],
             hashes=[document_metadata["hash"]]
         )
         return doc_id
