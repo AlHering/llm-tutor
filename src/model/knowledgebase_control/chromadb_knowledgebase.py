@@ -44,34 +44,34 @@ class ChromaKnowledgeBase(KnowledgeBase):
             "base", metadata=metadata)
 
     # Override
-    def get_or_create_collection(self, name: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Chroma:
+    def get_or_create_collection(self, collection: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Chroma:
         """
         Method for retrieving or creating a collection.
-        :param name: Collection name.
+        :param collection: Collection collection.
         :param metadata: Embedding collection metadata. Defaults to None.
         :param embedding_function: Embedding function for the collection. Defaults to base embedding function.
         :return: Database API.
         """
-        if name not in self.collections:
-            self.collections[name] = Chroma(
+        if collection not in self.collections:
+            self.collections[collection] = Chroma(
                 persist_directory=self.peristant_directory,
                 embedding_function=self.base_embedding_function if embedding_function is None else embedding_function,
-                collection_name=name,
+                collection_name=collection,
                 collection_metadata=metadata,
                 client_settings=self.client_settings
             )
-        return self.collections[name]
+        return self.collections[collection]
 
     # Override
-    def get_retriever(self, name: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
+    def get_retriever(self, collection: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
         """
         Method for acquiring a retriever.
-        :param name: Collection to use.
+        :param collection: Collection to use.
         :param search_type: The retriever's search type. Defaults to "similarity".
         :param search_kwargs: The retrievery search keyword arguments. Defaults to {"k": 4, "include_metadata": True}.
         :return: Retriever instance.
         """
-        db = self.collections.get(name, self.collections["base"])
+        db = self.collections.get(collection, self.collections["base"])
         search_kwargs["k"] = min(
             search_kwargs["k"], len(db.get()["ids"]))
         return db.as_retriever(
@@ -79,16 +79,18 @@ class ChromaKnowledgeBase(KnowledgeBase):
         )
 
     # Override
-    def embed_documents(self, name: str, documents: List[Document], metadatas: List[dict] = None, ids: List[str] = None) -> None:
+    def embed_documents(self, collection: str, documents: List[Document], metadatas: List[dict] = None, ids: List[str] = None, compute_metadata: bool = False) -> None:
         """
         Method for embedding documents.
-        :param name: Collection to use.
+        :param collection: Collection to use.
         :param documents: Documents to embed.
         :param metadatas: Metadata entries. 
             Defaults to None.
         :param ids: Custom IDs to add. 
             Defaults to the hash of the document contents.
+        :param compute_metadata: Flag for declaring, whether to compute metadata.
+            Defaults to False.
         """
-        self.collections[name].add_documents(documents=documents, metadatas=metadatas, ids=[
+        self.collections[collection].add_documents(documents=documents, metadatas=metadatas, ids=[
             hash_text_with_sha256(document.page_content) for document in documents] if ids is None else ids)
-        self.collections[name].persist()
+        self.collections[collection].persist()
