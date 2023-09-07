@@ -55,12 +55,15 @@ class KnowledgeBase(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def embed_documents(self, collection: str, documents: List[Document], ids: List[str] = None) -> None:
+    def embed_documents(self, collection: str, documents: List[Document], metadatas: List[dict] = None, ids: List[str] = None) -> None:
         """
         Method for embedding documents.
         :param collection: Collection to use.
         :param documents: Documents to embed.
-        :param ids: Custom IDs to add. Defaults to the hash of the document contents.
+        :param metadatas: Metadata entries.
+            Defaults to None.
+        :param ids: Custom IDs to add. 
+            Defaults to the hash of the document contents.
         """
         pass
 
