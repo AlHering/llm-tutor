@@ -70,6 +70,13 @@ class KnowledgeBase(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def wipe(self) -> None:
+        """
+        Method for wiping knowledgebase.
+        """
+        pass
+
     def compute_metadata(self, doc_content: str, collection: str = "base", **kwargs: Optional[Any]) -> dict:
         """
         Method for computing metadata from content.

@@ -41,10 +41,11 @@ class KnowledgeBaseController(object):
         for kb_config in kb_configs:
             self.register_knowledgebase(kb_config)
 
-    def register_knowledgebase(self, config: dict) -> None:
+    def register_knowledgebase(self, config: dict) -> str:
         """
         Method for registering knowledgebase.
         :param config: Knowledgebase config.
+        :return: Knowledgebase name.
         """
         name = config.get("name", uuid4())
         handler = config.get("handler", "chromadb")
@@ -57,6 +58,15 @@ class KnowledgeBaseController(object):
         self.kbs[name] = {"chromadb": ChromaKnowledgeBase}[handler](
             **handler_kwargs
         )
+        return name
+
+    def wipe_knowledgebase(self, target_kb: str) -> None:
+        """
+        Method for wiping a knowledgebase.
+        :param target_kb: Target knowledgebase.
+        """
+        self.kbs[target_kb].wipe()
+        self.pop(target_kb)
 
     def migrate_knowledgebase(self, source_kb: str, target_kb: str) -> None:
         """

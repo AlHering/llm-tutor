@@ -44,6 +44,13 @@ class ChromaKnowledgeBase(KnowledgeBase):
             "base", metadata=metadata)
 
     # Override
+    def wipe(self) -> None:
+        """
+        Method for wiping knowledgebase.
+        """
+        pass
+
+    # Override
     def get_or_create_collection(self, collection: str, metadata: dict = None, embedding_function: EmbeddingFunction = None) -> Chroma:
         """
         Method for retrieving or creating a collection.
