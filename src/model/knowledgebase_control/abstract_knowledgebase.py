@@ -54,10 +54,9 @@ class KnowledgeBase(abc.ABC):
         """
         pass
 
-    def compute_metadata(self, kb: str, doc_content: str, collection: str = "base", **kwargs: Optional[Any]) -> dict:
+    def compute_metadata(self, doc_content: str, collection: str = "base", **kwargs: Optional[Any]) -> dict:
         """
         Method for computing metadata from content.
-        :param kb: Target knowledgebase.
         :param doc_content: Document content.
         :param collection: Target collection.
             Defaults to "base".
