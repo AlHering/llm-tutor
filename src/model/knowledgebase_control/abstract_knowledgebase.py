@@ -71,9 +71,18 @@ class KnowledgeBase(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def wipe(self) -> None:
+    def delete_document(self, document_id: Any, collection: str = "base") -> None:
         """
-        Method for wiping knowledgebase.
+        Abstract method for deleting a document from the knowledgebase.
+        :param document_id: Document ID.
+        :param collection: Collection to remove document from.
+        """
+        pass
+
+    @abc.abstractmethod
+    def wipe_knowledgebase(self) -> None:
+        """
+        Abstract method for wiping knowledgebase.
         """
         pass
 

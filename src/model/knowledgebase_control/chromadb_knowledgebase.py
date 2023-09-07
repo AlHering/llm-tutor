@@ -44,7 +44,17 @@ class ChromaKnowledgeBase(KnowledgeBase):
             "base", metadata=metadata)
 
     # Override
-    def wipe(self) -> None:
+    def delete_document(self, document_id: Any, collection: str = "base") -> None:
+        """
+        Method for deleting a document from the knowledgebase.
+        :param document_id: Document ID.
+        :param collection: Collection to remove document from.
+        """
+        self.collections[collection].delete_document(document_id)
+        self.collections[collection].persist()
+
+    # Override
+    def wipe_knowledgebase(self) -> None:
         """
         Method for wiping knowledgebase.
         """
