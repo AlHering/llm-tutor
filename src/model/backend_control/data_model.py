@@ -33,8 +33,6 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
 
         id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True,
                     comment="ID of the knowledgebase.")
-        instance_uuid = Column(Uuid, unique=True, nullable=False,
-                      comment="UUID of the knowledgebase instance.")
         persistant_directory = Column(String, nullable=False,
                                       comment="Knowledgebase persistant directory.")
         document_directory = Column(String, nullable=False,
@@ -92,8 +90,6 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
 
         id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True,
                     comment="ID of the modelinstance.")
-        instance_uuid = Column(Uuid, unique=True, nullable=False,
-                      comment="UUID of the model instance.")
         backend = Column(String, nullable=False,
                          comment="Backend of the model instance.")
         loader = Column(String,
@@ -133,17 +129,3 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
         model[dataclass.__tablename__.replace(schema, "")] = dataclass
 
     base.metadata.create_all(bind=engine)
-
-    @event.listens_for(Knowledgebase, "before_insert")
-    def generate_uuid(mapper: Any, connect: Any, target: Any) -> None:
-        """
-        Generation method for UUID, triggered before entry inserts.
-        """
-        target.instance_uuid = uuid4()
-
-    @event.listens_for(Modelinstance, "before_insert")
-    def generate_uuid(mapper: Any, connect: Any, target: Any) -> None:
-        """
-        Generation method for UUID, triggered before entry inserts.
-        """
-        target.instance_uuid = uuid4()
