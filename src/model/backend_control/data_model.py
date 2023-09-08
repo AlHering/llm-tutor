@@ -37,10 +37,10 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
                                       comment="Knowledgebase persistant directory.")
         document_directory = Column(String, nullable=False,
                                     comment="Knowledgebase document directory.")
-        handler = Column(String, nullable=False, default="chromadb"
+        handler = Column(String, nullable=False, default="chromadb",
                          comment="Knowledgebase handler.")
-        implementation = Column(String, nullable=False, default="duckdb+parquet"
-                            comment="Handler implementation.")
+        implementation = Column(String, nullable=False, default="duckdb+parquet",
+                                comment="Handler implementation.")
 
         meta_data = Column(JSON, comment="Knowledgebase metadata.")
         created = Column(DateTime, server_default=func.now(),
