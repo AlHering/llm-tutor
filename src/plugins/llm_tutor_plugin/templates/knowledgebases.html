@@ -1,0 +1,36 @@
+{% extends "navigated_base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('llm_tutor.static', filename='style.css') }}">
+<section class="msger">
+
+    <main class="msger-chat">
+        {% for entry in chat %}
+
+        <div class={% if entry['user']=='bot' %} "msg left-msg" {% else %} "msg right-msg" {% endif %}>
+            <div class="msg-img" style={% if entry['user']=='bot' %}"background-image:
+                url(https://image.flaticon.com/icons/svg/327/327779.svg)"{% else
+                %} "background-image: url(https://image.flaticon.com/icons/svg/145/145867.svg)" {% endif %}>
+            </div>
+            <div class="msg-bubble">
+                <div class="msg-info">
+                    <div class="msg-info-name">{{entry['user']}}</div>
+                    <div class="msg-info-time">{{entry['time']}}</div>
+                </div>
+
+                <div class="msg-text">
+                    {{entry['text']}}
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+    </main>
+
+    <form class="msger-inputarea" action="/llm_tutor/chat" method="post">
+        <input type="text" class="msger-input" name="message" placeholder="Enter your message...">
+        <button type="submit" class="msger-send-btn">Send</button>
+    </form>
+</section>
+
+{% endblock content %}
