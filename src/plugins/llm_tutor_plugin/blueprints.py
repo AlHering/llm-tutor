@@ -5,13 +5,15 @@
 *            (c) 2023 Alexander Hering             *
 ****************************************************
 """
+"""
+Local imports - later to be implemented via FastAPI
+"""
+from src.utility.bronze import time_utility
 import os
 from typing import List, Union
 from flask import Blueprint, render_template, Response, Request, request
 import numpy as np
 import os
-
-
 PLUGIN_PATH = os.path.dirname(os.path.abspath(__file__))
 TICKERS = {}
 MODEL_CONTROL_BLUEPRINT = Blueprint(
@@ -32,18 +34,26 @@ def get_blueprints(global_config: dict) -> List[Blueprint]:
     global_config["plugins"]["LLMTutor"] = {
     }
 
-    @MODEL_CONTROL_BLUEPRINT.route("/llm_tutor", methods=["GET", "POST"])
-    def llm_tutor() -> Union[str, Response]:
+    @MODEL_CONTROL_BLUEPRINT.route("/chat", methods=["GET", "POST"])
+    def chat() -> Union[str, Response]:
         """
-        LLM Tutor page endpoint method.
+        LLM Tutor chat page endpoint method.
         :return: Rendered models page template.
         """
-        global_config["chat"] = [
-            {"user": "bot", "time": "12:45",
-                "text": "Hi, I am a bot. How are you. I can help you with your work!. Just ask me anything."},
-            {"user": "user", "time": "12:50",
-                "text": "Hi, bot. I am a user. I am trying to learn something. Please help me with it."}
-        ]
+        ts = time_utility.get_timestamp()
+        if request.method == "GET":
+            if "chat" not in global_config:
+                global_config["chat"] = [
+                    {"user": "bot", "time": ts,
+                        "text": "Hi, I am a bot. How are you. I can help you with your work!. Just ask me anything."}
+                ]
+        elif request.method == "POST":
+            message = request.form.get("message")
+            global_config["chat"].append({
+                "user": "bot",
+                "time": ts,
+                "text": message
+            })
         return render_template("llm_tutor.html", **global_config)
 
     return [MODEL_CONTROL_BLUEPRINT]
@@ -56,20 +66,20 @@ def get_menu() -> dict:
     """
     return {
         "LLM Tutor": {
-            "LLM Tutor": {
+            "Chat": {
                 "icon": "bed",
                 "type": "fa",
-                "href": "llm_tutor.llm_tutor"
+                "href": "llm_tutor.chat"
             },
             "Knowledgebases": {
                 "icon": "bed",
                 "type": "fa",
-                "href": "llm_tutor.llm_tutor"
+                "href": "llm_tutor.chat"
             },
             "LLM Instances": {
                 "icon": "bed",
                 "type": "fa",
-                "href": "llm_tutor.llm_tutor"
+                "href": "llm_tutor.chat"
             }
         }
     }
