@@ -139,11 +139,11 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
         """
         Generation method for UUID, triggered before entry inserts.
         """
-        target.uuid = uuid4()
+        target.instance_uuid = uuid4()
 
     @event.listens_for(Modelinstance, "before_insert")
     def generate_uuid(mapper: Any, connect: Any, target: Any) -> None:
         """
         Generation method for UUID, triggered before entry inserts.
         """
-        target.uuid = uuid4()
+        target.instance_uuid = uuid4()
