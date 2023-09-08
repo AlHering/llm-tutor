@@ -126,21 +126,15 @@ async def get_kbs() -> dict:
 
 @BACKEND.post(Endpoints.CREATE_KB)
 @interface_function()
-async def post_kb(handler: str, persistant_directory: str,  metadata: dict, embedding_instance_id: int, implementation: str) -> str:
+async def post_kb(uuid: str) -> str:
     """
     Method for creating knowledgebase.
-    :param handler: Knowledgebase handler.
-    :param persistant_directory: Knowledgebase persistant directory.
-    :param metadata: Knowledgebase metadata.
-    :param embedding_instance: Embedding instance ID.
-    :param implementation: Knowledgebase implementation.
+    :param uuid: Knowledgebase uuid.
     :return: Response.
     """
     global CONTROLLER
-    kb_id = CONTROLLER.post_object("knowledgebase", handler=handler,
-                                   persistant_directory=persistant_directory, meta_data=metadata, implementation=implementation)
-    CONTROLLER.register_knowledgebase(kb_id=kb_id, handler=handler,
-                                      persistant_directory=persistant_directory, meta_data=metadata, implementation=implementation)
+    kb_id = CONTROLLER.post_object("knowledgebase")
+    CONTROLLER.register_knowledgebase(kb_id=kb_id)
     return {"kb_id": kb_id}
 
 

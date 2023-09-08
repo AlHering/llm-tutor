@@ -54,8 +54,11 @@ class BackendController(BasicSQLAlchemyInterface):
         self._setup_database()
 
         # Knowledgebase infrastructure
+        self.knowledgebase_directory = os.path.join(
+            self.working_directory, "knowledgebases")
         self.document_directory = os.path.join(
             self.working_directory, "library")
+        safely_create_path(self.knowledgebase_directory)
         safely_create_path(self.document_directory)
         self.default_embedding_function = embedding_utility.LocalHuggingFaceEmbeddings(
             cfg.PATHS.INSTRUCT_XL_PATH
@@ -201,7 +204,7 @@ class BackendController(BasicSQLAlchemyInterface):
             embeddings.append(self.forward_generate(instance_id, document))
         return embeddings
 
-    def register_knowledgebase(self, kb_id: Union[str, int], handler: str, persistant_directory: str,  metadata: dict, embedding_instance_id: Union[str, int], implementation: str) -> str:
+    def register_knowledgebase(self, kb_id: Union[str, int], handler: str, persistant_directory: str,  metadata: dict = None, embedding_instance_id: Union[str, int] = None, implementation: str = None) -> str:
         """
         Method for registering knowledgebase.
         :param kb_id: Knowledgebase ID.
@@ -220,7 +223,7 @@ class BackendController(BasicSQLAlchemyInterface):
         handler_kwargs = {
             "peristant_directory": persistant_directory,
             "metadata": metadata,
-            "base_embedding_function": lambda x: self.embed_via_instance(embedding_instance_id, x),
+            "base_embedding_function": None if embedding_instance_id is None else lambda x: self.embed_via_instance(embedding_instance_id, x),
             "implementation": implementation
         }
 
@@ -228,6 +231,19 @@ class BackendController(BasicSQLAlchemyInterface):
             **handler_kwargs
         )
         return kb_id
+
+    def create_default_knowledgebase(self, uuid: str) -> int:
+        """
+        Method for creating default knowledgebase.
+        :param uuid: UUID to locate knowledgebase under.
+        :return: Knowledgebase ID.
+        """
+        kb_id = self.post_object("knowledgebase",
+                                 persistant_directory=os.path.join(self.knowledgebase_directory, uuid))
+        kb = self.get_object_by_id("knowledgebase", kb_id)
+        self.register_knowledgebase(
+            kb.id, kb.handler, kb.persistant_directory, kb.meta_data, kb.embedding_instance_id, kb.implementation
+        )
 
     def delete_documents(self, kb: str, document_ids: List[Any], collection: str = "base") -> None:
         """
