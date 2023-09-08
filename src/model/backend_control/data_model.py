@@ -19,6 +19,8 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
     :param model: Model dictionary for holding data classes.
     """
     schema = str(schema)
+    if not schema.endswith("."):
+        schema += "."
     base = declarative_base()
 
     class Knowledgebase(base):
@@ -35,8 +37,12 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
                                       comment="Knowledgebase persistant directory.")
         document_directory = Column(String, nullable=False,
                                     comment="Knowledgebase document directory.")
-        meta_data = Column(JSON, nullable=False,
-                           comment="Knowledgebase metadata.")
+        handler = Column(String, nullable=False, default="chromadb"
+                         comment="Knowledgebase handler.")
+        implementation = Column(String, nullable=False, default="duckdb+parquet"
+                            comment="Handler implementation.")
+
+        meta_data = Column(JSON, comment="Knowledgebase metadata.")
         created = Column(DateTime, server_default=func.now(),
                          comment="Timestamp of creation.")
         updated = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
@@ -45,7 +51,7 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
                           comment="Inactivity flag.")
 
         documents = relationship(
-            "Document", back_populates="kb_config", viewonly=True)
+            "Document", back_populates="knowledgebase")
         embedding_instance_id = mapped_column(
             Integer, ForeignKey(f"{schema}modelinstance.id"))
         embedding_instance = relationship("Modelinstance")
@@ -69,10 +75,10 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
         inactive = Column(Boolean, nullable=False, default=False,
                           comment="Inactivity flag.")
 
-        kb_config_id = mapped_column(
-            Integer, ForeignKey(f"{schema}kb_config.id"))
-        kb_config = relationship(
-            "KBConfig", back_populates="documents")
+        knowledgebase_id = mapped_column(
+            Integer, ForeignKey(f"{schema}knowledgebase.id"))
+        knowledgebase = relationship(
+            "Knowledgebase", back_populates="documents")
 
     class Modelinstance(base):
         """
