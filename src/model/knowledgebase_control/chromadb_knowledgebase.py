@@ -23,7 +23,7 @@ class ChromaKnowledgeBase(KnowledgeBase):
     Class for handling knowledge base interaction with ChromaDB.
     """
 
-    def __init__(self, peristant_directory: str, metadata: dict = None, base_embedding_function: EmbeddingFunction = None, implementation: str = "duckdb+parquet") -> None:
+    def __init__(self, peristant_directory: str, metadata: dict = None, base_embedding_function: EmbeddingFunction = None, implementation: str = None) -> None:
         """
         Initiation method.
         :param peristant_directory: Persistant directory for ChromaDB data.
@@ -37,7 +37,7 @@ class ChromaKnowledgeBase(KnowledgeBase):
             cfg.PATHS.INSTRUCT_XL_PATH
         ) if base_embedding_function is None else base_embedding_function
         self.client_settings = Settings(persist_directory=peristant_directory,
-                                        chroma_db_impl=implementation)
+                                        chroma_db_impl="duckdb+parquet" if implementation is None else implementation)
 
         self.collections = {}
         self.base_chromadb = self.get_or_create_collection(
