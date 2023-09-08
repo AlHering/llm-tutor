@@ -52,15 +52,6 @@ Dataclasses
 """
 
 
-class Model(BaseModel):
-    """
-    Dataclass for model representation.
-    """
-    path: str
-    type: str
-    loader: str
-
-
 """
 BACKEND ENDPOINTS
 """
@@ -72,14 +63,11 @@ class Endpoints(str, Enum):
     """
     BASE = "/api/v1"
 
-    GET_LLM_CONFIGS = f"{BASE}/llms/"
-    GET_KB_CONFIGS = f"{BASE}/kbs/"
+    GET_LLMS = f"{BASE}/llms/"
+    GET_KBS = f"{BASE}/kbs/"
 
-    SET_LLM_CONFIG = f"{BASE}/llms/{{llm_id}}"
-    SET_KB_CONFIG = f"{BASE}/kbs/{{kb_id}}"
-
-    CREATE_KB_CONFIG = f"{BASE}/kbs/create"
-    DELETE_KB_CONFIG = f"{BASE}/kbs/delete/{{kb_id}}"
+    CREATE_KB = f"{BASE}/kbs/create"
+    DELETE_KB = f"{BASE}/kbs/delete/{{kb_id}}"
 
     UPLOAD_DOCUMENT = f"{BASE}/kbs/upload/{{kb_id}}"
     DELETE_DOCUMENT = f"{BASE}/kbs/delete_doc/{{doc_id}}"
@@ -98,95 +86,75 @@ Endpoints
 """
 
 
-@BACKEND.get(Endpoints.GET_LLM_CONFIGS)
+@BACKEND.get(Endpoints.GET_LLMS)
 @access_validator()
-async def get_llm_configs() -> dict:
+async def get_llms() -> dict:
     """
-    Endpoint for getting LLM configs.
+    Endpoint for getting LLMs.
     :return: Response.
     """
     global CONTROLLER
-    return {"llm_configs": CONTROLLER.get_objects("llm_config")}
+    return {"llms": CONTROLLER.get_objects_by_type("modelinstance")}
 
 
-@BACKEND.get(Endpoints.GET_LLM_CONFIGS)
+@BACKEND.get(Endpoints.GET_KBS)
 @access_validator()
-async def get_kb_configs() -> dict:
+async def get_kbs() -> dict:
     """
-    Endpoint for getting KB configs.
+    Endpoint for getting KBs.
     :return: Response.
     """
     global CONTROLLER
-    return {"kb_configs": CONTROLLER.get_objects("kb_config")}
+    return {"kbs": CONTROLLER.get_objects_by_type("knowledgebase")}
 
 
-@BACKEND.post(Endpoints.SET_LLM_CONFIGS)
+@BACKEND.post(Endpoints.CREATE_KB)
 @access_validator()
-async def set_llm_config(config_id: int) -> dict:
+async def post_kb(handler: str, persistant_directory: str,  metadata: dict, embedding_instance_id: int, implementation: str) -> str:
     """
-    Endpoint for setting active LLM config.
-    :param config_id: int: Config ID.
+    Method for creating knowledgebase.
+    :param handler: Knowledgebase handler.
+    :param persistant_directory: Knowledgebase persistant directory.
+    :param metadata: Knowledgebase metadata.
+    :param embedding_instance: Embedding instance ID.
+    :param implementation: Knowledgebase implementation.
     :return: Response.
     """
     global CONTROLLER
-    status = CONTROLLER.set_active("llm_config", config_id)
-    return {"successful": status}
+    kb_id = CONTROLLER.post_object("knowledgebase", handler=handler,
+                                   persistant_directory=persistant_directory, meta_data=metadata, implementation=implementation)
+    CONTROLLER.register_knowledgebase(kb_id=kb_id, handler=handler,
+                                      persistant_directory=persistant_directory, meta_data=metadata, implementation=implementation)
+    return {"kb_id": kb_id}
 
 
-@BACKEND.post(Endpoints.SET_LLM_CONFIGS)
+@BACKEND.delete(Endpoints.DELETE_KB)
 @access_validator()
-async def set_kb_config(config_id: int) -> dict:
+async def delete_kb(kb_id: int) -> dict:
     """
-    Endpoint for setting active KB config.
-    :param config_id: int: Config ID.
+    Endpoint for deleting KBs.
+    :param kb_id: int: Knowledgebase ID.
     :return: Response.
     """
     global CONTROLLER
-    status = CONTROLLER.set_active("llm_config", config_id)
-    return {"successful": status}
-
-
-@BACKEND.post(Endpoints.CREATE_KB_CONFIG)
-@access_validator()
-async def post_kb_config(payload: dict) -> dict:
-    """
-    Endpoint for setting active KB config.
-    :param payload: Config.
-    :return: Response.
-    """
-    global CONTROLLER
-    config_id = CONTROLLER.post_object("kb_config", config=payload)
-    CONTROLLER.kb_controller.register_knowledgebase(payload)
-    return {"config_id": config_id}
-
-
-@BACKEND.delete(Endpoints.DELETE_KB_CONFIG)
-@access_validator()
-async def delete_kb_config(config_id: int) -> dict:
-    """
-    Endpoint for setting active KB config.
-    :param config_id: int: Config ID.
-    :return: Response.
-    """
-    global CONTROLLER
-    config = CONTROLLER.get_object_by_id("kb_config", config_id)
-    config_id = CONTROLLER.delete_object("kb_config", config_id)
-    CONTROLLER.kb_controller.wipe_knowledgebase(config["name"])
-    return {"config_id": config_id}
+    CONTROLLER.delete_object("knowledgebase", kb_id)
+    CONTROLLER.wipe_knowledgebase(str(kb_id))
+    return {"kb_id": kb_id}
 
 
 @BACKEND.post(Endpoints.UPLOAD_DOCUMENT)
 @access_validator()
-async def upload_document(config_id: int, document_content: str, document_metadata: dict = None) -> dict:
+async def upload_document(kb_id: int, document_content: str, document_metadata: dict = None) -> dict:
     """
     Endpoint for uploading a document.
-    :param config_id: int: Config ID of KB.
+    :param kb_id: int: KB ID.
     :param document_content: Document content.
     :param document_metadata: Document metadata.
     :return: Response.
     """
     global CONTROLLER
-    document_id = CONTROLLER.embed_document(config_id, document_content)
+    document_id = CONTROLLER.embed_document(
+        kb_id, document_content, document_metadata)
     return {"document_id": document_id}
 
 
@@ -205,14 +173,18 @@ async def delete_document(document_id: int) -> dict:
 
 @BACKEND.post(Endpoints.POST_QUERY)
 @access_validator()
-async def post_query(query: str) -> dict:
+async def post_qa_query(llm_id: int, kb_id: int, query: str, include_sources: bool = True) -> dict:
     """
-    Endpoint for posting query.
-    :param query: Query.
-    :return: Response.
-    """
+    Endpoint for posting document qa query.
+        :param llm_id: LLM ID.
+        :param kb_id: Knowledgebase ID.
+        :param query: Query.
+        :param include_sources: Flag declaring, whether to include sources.
+        :return: Response.
+        """
     global CONTROLLER
-    response = CONTROLLER.post_query(query)
+    response = CONTROLLER.forward_document_qa(
+        llm_id, kb_id, query, include_sources)
     return {"response": response}
 
 """
