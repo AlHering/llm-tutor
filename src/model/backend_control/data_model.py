@@ -21,37 +21,22 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
     schema = str(schema)
     base = declarative_base()
 
-    class LLMConfig(base):
+    class Knowledgebase(base):
         """
-        LLMConfig class, representing an language model config.
+        Knowledgebase class, representing an knowledge base config..
         """
-        __tablename__ = f"{schema}llm_config"
+        __tablename__ = f"{schema}knowledgebase"
         __table_args__ = {
-            "comment": "LLM config table.", "extend_existing": True}
+            "comment": "Knowledgebase table.", "extend_existing": True}
 
         id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True,
                     comment="ID of the config.")
-        config = Column(JSON, nullable=False,
-                        comment="Confiig.")
-        created = Column(DateTime, server_default=func.now(),
-                         comment="Timestamp of creation.")
-        updated = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
-                         comment="Timestamp of last update.")
-        inactive = Column(Boolean, nullable=False, default=False,
-                          comment="Inactivity flag.")
-
-    class KBConfig(base):
-        """
-        KBConfig class, representing an knowledge base config..
-        """
-        __tablename__ = f"{schema}kb_config"
-        __table_args__ = {
-            "comment": "KB config table.", "extend_existing": True}
-
-        id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True,
-                    comment="ID of the config.")
-        config = Column(JSON, nullable=False,
-                        comment="Confiig.")
+        persistant_directory = Column(String, nullable=False,
+                                      comment="Knowledgebase persistant directory.")
+        document_directory = Column(String, nullable=False,
+                                    comment="Knowledgebase document directory.")
+        meta_data = Column(JSON, nullable=False,
+                           comment="Knowledgebase metadata.")
         created = Column(DateTime, server_default=func.now(),
                          comment="Timestamp of creation.")
         updated = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
@@ -61,6 +46,9 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
 
         documents = relationship(
             "Document", back_populates="kb_config", viewonly=True)
+        embedding_instance_id = mapped_column(
+            Integer, ForeignKey(f"{schema}modelinstance.id"))
+        embedding_instance = relationship("Modelinstance")
 
     class Document(base):
         """
@@ -86,6 +74,33 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
         kb_config = relationship(
             "KBConfig", back_populates="documents")
 
+    class Modelinstance(base):
+        """
+        Modelinstance class, representing a machine learning model (version) instance.
+        """
+        __tablename__ = f"{schema}modelinstance"
+        __table_args__ = {
+            "comment": "Model instance table.", "extend_existing": True}
+
+        uuid = Column(Uuid, primary_key=True, unique=True, nullable=False, default=uuid4,
+                      comment="UUID of the model instance.")
+        backend = Column(String, nullable=False,
+                         comment="Backend of the model instance.")
+        loader = Column(String,
+                        comment="Loader for the model instance.")
+        loader_kwargs = Column(JSON,
+                               comment="Additional loading keyword arguments.")
+        gateway = Column(String,
+                         comment="Gateway for instance interaction.")
+        meta_data = Column(JSON,
+                           comment="Metadata of the model instance.")
+        created = Column(DateTime, server_default=func.now(),
+                         comment="Timestamp of creation.")
+        updated = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
+                         comment="Timestamp of last update.")
+        inactive = Column(Boolean, nullable=False, default=False,
+                          comment="Inactivity flag.")
+
     class Log(base):
         """
         Log class, representing an log entry, connected to a machine learning model or model version interaction.
@@ -104,7 +119,14 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
         responded = Column(DateTime, server_default=func.now(), server_onupdate=func.now(),
                            comment="Timestamp of reponse transmission.")
 
-    for dataclass in [LLMConfig, KBConfig, Document, Log]:
+    for dataclass in [Knowledgebase, Document, Modelinstance, Log]:
         model[dataclass.__tablename__.replace(schema, "")] = dataclass
 
     base.metadata.create_all(bind=engine)
+
+    @event.listens_for(Modelinstance, "before_insert")
+    def generate_uuid(mapper: Any, connect: Any, target: Any) -> None:
+        """
+        Generation method for UUID, triggered before entry inserts.
+        """
+        target.uuid = uuid4()
