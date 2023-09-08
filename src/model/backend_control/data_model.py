@@ -7,7 +7,7 @@
 """
 from sqlalchemy.orm import relationship, mapped_column, declarative_base
 from sqlalchemy import Engine, Column, String, JSON, ForeignKey, Integer, DateTime, func, Uuid, Text, event, Boolean
-from uuid import uuid4
+from uuid import uuid4, UUID
 from typing import Any
 
 
@@ -32,7 +32,9 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
             "comment": "Knowledgebase table.", "extend_existing": True}
 
         id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True,
-                    comment="ID of the config.")
+                    comment="ID of the knowledgebase.")
+        instance_uuid = Column(Uuid, unique=True, nullable=False,
+                      comment="UUID of the knowledgebase instance.")
         persistant_directory = Column(String, nullable=False,
                                       comment="Knowledgebase persistant directory.")
         document_directory = Column(String, nullable=False,
@@ -88,7 +90,9 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
         __table_args__ = {
             "comment": "Model instance table.", "extend_existing": True}
 
-        uuid = Column(Uuid, primary_key=True, unique=True, nullable=False, default=uuid4,
+        id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True,
+                    comment="ID of the modelinstance.")
+        instance_uuid = Column(Uuid, unique=True, nullable=False,
                       comment="UUID of the model instance.")
         backend = Column(String, nullable=False,
                          comment="Backend of the model instance.")
@@ -129,6 +133,13 @@ def populate_data_instrastructure(engine: Engine, schema: str, model: dict) -> N
         model[dataclass.__tablename__.replace(schema, "")] = dataclass
 
     base.metadata.create_all(bind=engine)
+
+    @event.listens_for(Knowledgebase, "before_insert")
+    def generate_uuid(mapper: Any, connect: Any, target: Any) -> None:
+        """
+        Generation method for UUID, triggered before entry inserts.
+        """
+        target.uuid = uuid4()
 
     @event.listens_for(Modelinstance, "before_insert")
     def generate_uuid(mapper: Any, connect: Any, target: Any) -> None:
