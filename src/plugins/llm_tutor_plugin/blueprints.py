@@ -40,6 +40,28 @@ def get_blueprints(global_config: dict) -> List[Blueprint]:
         LLM Tutor chat page endpoint method.
         :return: Rendered models page template.
         """
+        ts = time_utility.get_timestamp_by_format("%d. %b. %Y (%H:%M:%S)")
+        if request.method == "GET":
+            if "chat" not in global_config:
+                global_config["chat"] = [
+                    {"user": "bot", "time": ts,
+                        "text": "Hi, I am a bot. How are you. I can help you with your work!. Just ask me anything."}
+                ]
+        elif request.method == "POST":
+            message = request.form.get("message")
+            global_config["chat"].append({
+                "user": "user",
+                "time": ts,
+                "text": message
+            })
+        return render_template("chat.html", **global_config)
+
+    @MODEL_CONTROL_BLUEPRINT.route("/knowledgebases", methods=["GET", "POST"])
+    def knowledgebases() -> Union[str, Response]:
+        """
+        LLM Tutor knowledgebase page endpoint method.
+        :return: Rendered models page template.
+        """
         ts = time_utility.get_timestamp()
         if request.method == "GET":
             if "chat" not in global_config:
@@ -54,7 +76,29 @@ def get_blueprints(global_config: dict) -> List[Blueprint]:
                 "time": ts,
                 "text": message
             })
-        return render_template("llm_tutor.html", **global_config)
+        return render_template("knowledgebases.html", **global_config)
+
+    @MODEL_CONTROL_BLUEPRINT.route("/llm_instances", methods=["GET", "POST"])
+    def llm_instances() -> Union[str, Response]:
+        """
+        LLM Tutor LLM instances page endpoint method.
+        :return: Rendered models page template.
+        """
+        ts = time_utility.get_timestamp()
+        if request.method == "GET":
+            if "chat" not in global_config:
+                global_config["chat"] = [
+                    {"user": "bot", "time": ts,
+                        "text": "Hi, I am a bot. How are you. I can help you with your work!. Just ask me anything."}
+                ]
+        elif request.method == "POST":
+            message = request.form.get("message")
+            global_config["chat"].append({
+                "user": "bot",
+                "time": ts,
+                "text": message
+            })
+        return render_template("llm_instances.html", **global_config)
 
     return [MODEL_CONTROL_BLUEPRINT]
 
@@ -74,12 +118,12 @@ def get_menu() -> dict:
             "Knowledgebases": {
                 "icon": "bed",
                 "type": "fa",
-                "href": "llm_tutor.chat"
+                "href": "llm_tutor.knowledgebases"
             },
             "LLM Instances": {
                 "icon": "bed",
                 "type": "fa",
-                "href": "llm_tutor.chat"
+                "href": "llm_tutor.llm_instances"
             }
         }
     }
