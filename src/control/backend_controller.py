@@ -6,10 +6,9 @@
 ****************************************************
 """
 import os
-from uuid import UUID, uuid4
 from time import sleep
 from datetime import datetime as dt
-from typing import Optional, Any, List, Dict
+from typing import Optional, Any, List, Dict, Union
 from src.configuration import configuration as cfg
 from src.utility.gold.basic_sqlalchemy_interface import BasicSQLAlchemyInterface
 from src.utility.bronze import sqlalchemy_utility
@@ -62,8 +61,9 @@ class BackendController(BasicSQLAlchemyInterface):
         )
         self.kbs: Dict[str, KnowledgeBase] = {}
         self.documents = {}
-        for kb_config in self.get_objects_by_type("kb_config"):
-            self.register_knowledgebase(kb_config)
+        for kb in self.get_objects_by_type("knowledgebase"):
+            self.register_knowledgebase(kb.id, kb.handler, kb.persinstant_directory,
+                                        kb.meta_data, kb.embedding_instance_id, kb.implementation)
 
         # LLM infrastructure
         self.llm_pool = ThreadedLLMPool()
@@ -117,31 +117,32 @@ class BackendController(BasicSQLAlchemyInterface):
         Method for running shutdown process.
         """
         self.llm_pool.stop_all()
-        while any(self.llm_pool.is_running(instance_uuid) for instance_uuid in self._cache):
+        while any(self.llm_pool.is_running(instance_id) for instance_id in self._cache):
             sleep(2.0)
 
     """
     LLM handling methods
     """
 
-    def load_instance(self, instance_uuid: str) -> Optional[str]:
+    def load_instance(self, instance_id: Union[str, int]) -> Optional[str]:
         """
         Method for loading a configured language model instance.
-        :param instance_uuid: Instance UUID.
-        :return: Instance UUID if process as successful.
+        :param instance_id: Instance ID.
+        :return: Instance ID if process as successful.
         """
-        if instance_uuid in self._cache:
-            if not self.llm_pool.is_running(instance_uuid):
-                self.llm_pool.start(instance_uuid)
-                self._cache[instance_uuid]["restarted"] += 1
+        instance_id = str(instance_id)
+        if instance_id in self._cache:
+            if not self.llm_pool.is_running(instance_id):
+                self.llm_pool.start(instance_id)
+                self._cache[instance_id]["restarted"] += 1
         else:
-            self._cache[instance_uuid] = {
+            self._cache[instance_id] = {
                 "started": None,
                 "restarted": 0,
                 "accessed": 0,
                 "inactive": 0
             }
-            instance = self.get_object("instance", UUID(instance_uuid))
+            instance = self.get_object("instance", instance_id)
             llm_config = {
                 "model_path": instance.model.path,
                 "model_config": {
@@ -153,56 +154,79 @@ class BackendController(BasicSQLAlchemyInterface):
                 }
             }
 
-            self.llm_pool.prepare_llm(llm_config, instance_uuid)
-            self.llm_pool.start(instance_uuid)
-            self._cache[instance_uuid]["started"] = dt.now()
-        return instance_uuid
+            self.llm_pool.prepare_llm(llm_config, instance_id)
+            self.llm_pool.start(instance_id)
+            self._cache[instance_id]["started"] = dt.now()
+        return instance_id
 
-    def unload_instance(self, instance_uuid: str) -> Optional[str]:
+    def unload_instance(self, instance_id: Union[str, int]) -> Optional[str]:
         """
         Method for unloading a configured language model instance.
-        :param instance_uuid: Instance UUID.
-        :return: Instance UUID if process as successful.
+        :param instance_id: Instance ID.
+        :return: Instance ID if process as successful.
         """
-        if instance_uuid in self._cache:
-            if self.llm_pool.is_running(instance_uuid):
-                self.llm_pool.stop(instance_uuid)
-            return instance_uuid
+        instance_id = str(instance_id)
+        if instance_id in self._cache:
+            if self.llm_pool.is_running(instance_id):
+                self.llm_pool.stop(instance_id)
+            return instance_id
         else:
             return None
 
-    def forward_generate(self, instance_uuid: str, prompt: str) -> Optional[str]:
+    def forward_generate(self, instance_id: Union[str, int], prompt: str) -> Optional[str]:
         """
         Method for forwarding a generate request to an instance.
-        :param instance_uuid: Instance UUID.
+        :param instance_id: Instance ID.
         :param prompt: Prompt.
-        :return: Instance UUID.
+        :return: Instance ID.
         """
-        self.load_instance(instance_uuid)
-        return self.llm_pool.generate(instance_uuid, prompt)
+        instance_id = str(instance_id)
+        self.load_instance(instance_id)
+        return self.llm_pool.generate(instance_id, prompt)
 
     """
     Knowledgebase handling methods
     """
 
-    def register_knowledgebase(self, config: dict) -> str:
+    def embed_via_instance(self, instance_id: Union[str, int], documents: List[str]) -> List[Any]:
+        """
+        Wrapper method for embedding via instance.
+        :param instance_id: LLM instance ID.
+        :param documents: List of documents to embed.
+        :return: List of embeddings.
+        """
+        embeddings = []
+        for document in documents:
+            embeddings.append(self.forward_generate(instance_id, document))
+        return embeddings
+
+    def register_knowledgebase(self, kb_id: Union[str, int], handler: str, persistant_directory: str,  metadata: dict, embedding_instance_id: Union[str, int], implementation: str) -> str:
         """
         Method for registering knowledgebase.
-        :param config: Knowledgebase config.
-        :return: Knowledgebase name.
+        :param kb_id: Knowledgebase ID.
+        :param handler: Knowledgebase handler.
+        :param persistant_directory: Knowledgebase persistant directory.
+        :param metadata: Knowledgebase metadata.
+        :param embedding_instance: Embedding instance ID.
+        :param implementation: Knowledgebase implementation.
+        :return: Knowledgebase ID.
         """
-        name = config.get("name", uuid4())
-        handler = config.get("handler", "chromadb")
-        handler_kwargs = config.get("handler_kwargs", {
-            "peristant_directory": os.path.join(self.working_directory, name),
-            "base_embedding_function": self.default_embedding_function,
-            "implementation": "duckdb+parquet"}
-        )
+        kb_id = str(kb_id)
+        embedding_instance_id = str(embedding_instance_id)
 
-        self.kbs[name] = {"chromadb": ChromaKnowledgeBase}[handler](
+        self.load_instance(embedding_instance_id)
+
+        handler_kwargs = {
+            "peristant_directory": persistant_directory,
+            "metadata": metadata,
+            "base_embedding_function": lambda x: self.embed_via_instance(embedding_instance_id, x),
+            "implementation": implementation
+        }
+
+        self.kbs[kb_id] = {"chromadb": ChromaKnowledgeBase}[handler](
             **handler_kwargs
         )
-        return name
+        return kb_id
 
     def delete_documents(self, kb: str, document_ids: List[Any], collection: str = "base") -> None:
         """
