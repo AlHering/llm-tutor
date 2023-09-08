@@ -291,42 +291,28 @@ class BackendController(BasicSQLAlchemyInterface):
     Custom methods
     """
 
-    def set_active(self, object_type: str, object_id: Any) -> bool:
-        """
-        Method for setting active object.
-        :param object_type: Object type.
-        :param object_id: Object ID.
-        :return: True, if successful else False.
-        """
-        if self.get_object_by_id(object_type, object_id) is not None:
-            self._cache["active"][object_type] = object_id
-            return True
-        else:
-            return False
-
-    def embed_document(self, kb_config_id: int, document_content: str, document_metadata: dict = None) -> int:
+    def embed_document(self, kb_id: Union[int, str], document_content: str, document_metadata: dict = None) -> int:
         """
         Method for embedding document.
-        :param kb_config_id: KB config ID.
+        :param kb_id: Knowledgebase ID.
         :param document_content: Document content.
         :param document_metadata: Document metadata.
             Defaults to None
         :return: Document ID.
         """
-        kb_config = self.get_object_by_id("kb_config", kb_config_id)
+        kb = self.get_object_by_id("knowledgebase", kb_id)
         doc_id = self.post_object("document", {
             "content": document_content,
-            "kb_config_id": kb_config.id
+            "knowledgebase_id": kb.id
         })
         document_metadata = {} if document_metadata is None else document_metadata
         document_metadata.update({
             "hash": hash_text_with_sha256(document_content),
-            "kb_id": kb_config.id,
-            "kb_name": kb_config.config["name"]
+            "kb_id": kb.id,
         })
 
         self.kb_controller.embed_documents(
-            kb_config["name"], documents=[document_content],
+            str(kb.id), documents=[document_content],
             metadatas=[document_metadata],
             ids=[str(doc_id)],
             hashes=[document_metadata["hash"]]
@@ -341,7 +327,7 @@ class BackendController(BasicSQLAlchemyInterface):
         """
         doc = self.get_object_by_id("document", document_id)
         self.kb_controller.delete_documents(
-            doc.kb_config.config["name"],
+            str(doc.knowledgebase_id),
             [str(doc.id)]
         )
 
