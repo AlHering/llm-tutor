@@ -8,6 +8,7 @@
 import uvicorn
 from enum import Enum
 from typing import Optional, Any
+from datetime import datetime as dt
 from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
 from functools import wraps
@@ -22,12 +23,13 @@ BACKEND = FastAPI(title="LLM Tutor Backend", version="0.1",
 CONTROLLER: BackendController = BackendController()
 
 
-def access_validator() -> Optional[Any]:
+def interface_function() -> Optional[Any]:
     """
     Validation decorator.
     :param func: Decorated function.
     :return: Error message if status is incorrect, else function return.
     """
+    global CONTROLLER
 
     def wrapper(func: Any) -> Optional[Any]:
         """
@@ -42,7 +44,21 @@ def access_validator() -> Optional[Any]:
             :param args: Arguments.
             :param kwargs: Keyword arguments.
             """
-            return await func(*args, **kwargs)
+            requested = dt.now()
+            response = await func(*args, **kwargs)
+            responded = dt.now()
+            CONTROLLER.post_object(
+                "log",
+                request={
+                    "function": func.__name__,
+                    "args": args,
+                    "kwargs": kwargs
+                },
+                response=response,
+                requested=requested,
+                responded=responded
+            )
+            return response
         return inner
     return wrapper
 
@@ -87,7 +103,7 @@ Endpoints
 
 
 @BACKEND.get(Endpoints.GET_LLMS)
-@access_validator()
+@interface_function()
 async def get_llms() -> dict:
     """
     Endpoint for getting LLMs.
@@ -98,7 +114,7 @@ async def get_llms() -> dict:
 
 
 @BACKEND.get(Endpoints.GET_KBS)
-@access_validator()
+@interface_function()
 async def get_kbs() -> dict:
     """
     Endpoint for getting KBs.
@@ -109,7 +125,7 @@ async def get_kbs() -> dict:
 
 
 @BACKEND.post(Endpoints.CREATE_KB)
-@access_validator()
+@interface_function()
 async def post_kb(handler: str, persistant_directory: str,  metadata: dict, embedding_instance_id: int, implementation: str) -> str:
     """
     Method for creating knowledgebase.
@@ -129,7 +145,7 @@ async def post_kb(handler: str, persistant_directory: str,  metadata: dict, embe
 
 
 @BACKEND.delete(Endpoints.DELETE_KB)
-@access_validator()
+@interface_function()
 async def delete_kb(kb_id: int) -> dict:
     """
     Endpoint for deleting KBs.
@@ -143,7 +159,7 @@ async def delete_kb(kb_id: int) -> dict:
 
 
 @BACKEND.post(Endpoints.UPLOAD_DOCUMENT)
-@access_validator()
+@interface_function()
 async def upload_document(kb_id: int, document_content: str, document_metadata: dict = None) -> dict:
     """
     Endpoint for uploading a document.
@@ -159,7 +175,7 @@ async def upload_document(kb_id: int, document_content: str, document_metadata: 
 
 
 @BACKEND.delete(Endpoints.DELETE_DOCUMENT)
-@access_validator()
+@interface_function()
 async def delete_document(document_id: int) -> dict:
     """
     Endpoint for deleting document.
@@ -172,7 +188,7 @@ async def delete_document(document_id: int) -> dict:
 
 
 @BACKEND.post(Endpoints.POST_QUERY)
-@access_validator()
+@interface_function()
 async def post_qa_query(llm_id: int, kb_id: int, query: str, include_sources: bool = True) -> dict:
     """
     Endpoint for posting document qa query.
