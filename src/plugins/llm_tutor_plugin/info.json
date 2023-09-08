@@ -1,0 +1,7 @@
+{
+  "name": "LLMTutorPlugin",
+  "type": "blueprints",
+  "data_path": "./data",
+  "blueprints": "./blueprints.py",
+  "requirements": []
+}

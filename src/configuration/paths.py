@@ -43,3 +43,12 @@ MODEL_CONTROL_FRONTEND_CACHE = os.path.join(
     BACKEND_PATH, "llm_tutor", "frontend_cache.json")
 MODEL_CONTROL_FRONTEND_ASSETS = os.path.join(
     BACKEND_PATH, "llm_tutor", "assets")
+
+
+"""
+Frontends
+"""
+FLASK_COMMON_STATIC = os.path.join(
+    SOURCE_PATH, "view", "flask_frontend", "common_static")
+FLASK_COMMON_TEMPLATES = os.path.join(
+    SOURCE_PATH, "view", "flask_frontend", "common_templates")
