@@ -80,10 +80,11 @@ class ChromaKnowledgeBase(KnowledgeBase):
         return self.collections[collection]
 
     # Override
-    def get_retriever(self, collection: str, search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
+    def get_retriever(self, collection: str = "base", search_type: str = "similarity", search_kwargs: dict = {"k": 4, "include_metadata": True}) -> VectorStoreRetriever:
         """
         Method for acquiring a retriever.
         :param collection: Collection to use.
+            Defaults to "base" collection.
         :param search_type: The retriever's search type. Defaults to "similarity".
         :param search_kwargs: The retrievery search keyword arguments. Defaults to {"k": 4, "include_metadata": True}.
         :return: Retriever instance.
