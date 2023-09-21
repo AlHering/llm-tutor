@@ -15,7 +15,6 @@ from src.utility.bronze import sqlalchemy_utility
 from src.utility.bronze.hashing_utility import hash_text_with_sha256
 from src.model.backend_control.data_model import populate_data_instrastructure
 from src.model.backend_control.llm_pool import ThreadedLLMPool
-from langchain.chains import RetrievalQA
 from src.utility.silver import embedding_utility
 from src.utility.bronze.hashing_utility import hash_text_with_sha256
 from src.utility.silver.file_system_utility import safely_create_path
