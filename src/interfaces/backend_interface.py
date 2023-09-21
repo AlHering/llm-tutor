@@ -213,7 +213,7 @@ def run_backend(host: str = None, port: int = None, reload: bool = True) -> None
                 host="127.0.0.1" if host is None else host,
                 port=int(
                     cfg.ENV.get("BACKEND_PORT", 7861) if port is None else port),
-                reload=True)
+                reload=False)
 
 
 if __name__ == "__main__":
