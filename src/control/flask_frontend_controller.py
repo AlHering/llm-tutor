@@ -52,7 +52,8 @@ class FlaskFrontendController(object):
         }
         self.config["backend"] = {
             "host": cfg.BACKEND_HOST,
-            "port": cfg.BACKEND_PORT
+            "port": cfg.BACKEND_PORT,
+            "api_base_url": f"http://{cfg.BACKEND_HOST}:{cfg.BACKEND_PORT}"
         }
 
         if not self.check_config:
