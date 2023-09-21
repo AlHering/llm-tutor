@@ -50,6 +50,10 @@ class FlaskFrontendController(object):
             self.config["plugins"] = {}
         self.config["CONTROLLERS"] = {
         }
+        self.config["backend"] = {
+            "host": cfg.BACKEND_HOST,
+            "port": cfg.BACKEND_PORT
+        }
 
         if not self.check_config:
             raise exceptions.InvalidCFAConfigurationException(self.config)
